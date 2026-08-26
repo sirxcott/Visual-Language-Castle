@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'practice_room_screen.dart';
+
 class GalleryHubScreen extends StatelessWidget {
   const GalleryHubScreen({super.key});
 
@@ -47,7 +49,13 @@ class GalleryHubScreen extends StatelessWidget {
                         itemCount: destinations.length,
                         itemBuilder: (context, index) {
                           final destination = destinations[index];
-                          return _GalleryFrame(title: destination.$1, icon: destination.$2);
+                          return _GalleryFrame(
+                            title: destination.$1,
+                            icon: destination.$2,
+                            onTap: destination.$1 == 'Practice Rooms'
+                                ? () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PracticeRoomScreen()))
+                                : null,
+                          );
                         },
                       ),
                     ),
@@ -63,29 +71,37 @@ class GalleryHubScreen extends StatelessWidget {
 }
 
 class _GalleryFrame extends StatelessWidget {
-  const _GalleryFrame({required this.title, required this.icon});
+  const _GalleryFrame({required this.title, required this.icon, this.onTap});
 
   final String title;
   final IconData icon;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF151718),
-        border: Border.all(color: const Color(0xFF876E43), width: 2),
-        boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 14, offset: Offset(0, 6))],
-      ),
-      padding: const EdgeInsets.all(9),
-      child: DecoratedBox(
-        decoration: BoxDecoration(border: Border.all(color: const Color(0xFF4E422F)), color: const Color(0xFF202222)),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: const Color(0xFFC09A52), size: 40),
-            const SizedBox(height: 18),
-            Text(title, textAlign: TextAlign.center, style: const TextStyle(color: Color(0xFFE0D3B8), fontSize: 17)),
-          ],
+    return Semantics(
+      button: onTap != null,
+      label: onTap == null ? title : 'Open $title',
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF151718),
+            border: Border.all(color: const Color(0xFF876E43), width: 2),
+            boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 14, offset: Offset(0, 6))],
+          ),
+          padding: const EdgeInsets.all(9),
+          child: DecoratedBox(
+            decoration: BoxDecoration(border: Border.all(color: const Color(0xFF4E422F)), color: const Color(0xFF202222)),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: const Color(0xFFC09A52), size: 40),
+                const SizedBox(height: 18),
+                Text(title, textAlign: TextAlign.center, style: const TextStyle(color: Color(0xFFE0D3B8), fontSize: 17)),
+              ],
+            ),
+          ),
         ),
       ),
     );
