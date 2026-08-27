@@ -1,0 +1,218 @@
+import 'package:flutter/material.dart';
+
+import '../data/language_tables.dart';
+import '../models/language_card.dart';
+
+class ResearchLaboratoryScreen extends StatefulWidget {
+  const ResearchLaboratoryScreen({super.key});
+
+  @override
+  State<ResearchLaboratoryScreen> createState() => _ResearchLaboratoryScreenState();
+}
+
+class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _selectedTable = 'All Tables';
+
+  List<LanguageCard> get _allCards => [for (final table in languageTables) ...table.cards];
+
+  List<LanguageCard> get _filteredCards {
+    final query = _searchController.text.trim().toLowerCase();
+    return _allCards.where((card) {
+      final matchesTable = _selectedTable == 'All Tables' || card.tableName == _selectedTable;
+      final matchesSearch = query.isEmpty || card.text.toLowerCase().contains(query) || card.tableName.toLowerCase().contains(query);
+      return matchesTable && matchesSearch;
+    }).toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_updateResults);
+  }
+
+  @override
+  void dispose() {
+    _searchController
+      ..removeListener(_updateResults)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _updateResults() => setState(() {});
+
+  void _showDetails(LanguageCard card) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF242627),
+        title: Text(card.text, style: const TextStyle(color: Color(0xFFF0E6D2), fontSize: 20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _DetailLabel(label: 'TABLE', value: card.tableName),
+            const SizedBox(height: 16),
+            _DetailLabel(label: 'CATEGORY', value: card.category.label, color: card.category.color),
+            const SizedBox(height: 16),
+            _DetailLabel(label: 'REFERENCE NOTE', value: card.referenceNote.isEmpty ? 'No reference note supplied.' : card.referenceNote),
+          ],
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF1B1D1E), Color(0xFF0A0B0C)]),
+        ),
+        child: SafeArea(
+          child: Scrollbar(
+            thumbVisibility: true,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(36),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 980),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                    Row(
+                      children: [
+                        IconButton(tooltip: 'Return to Gallery Hall', onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.arrow_back_rounded)),
+                        const SizedBox(width: 8),
+                        const Text('RESEARCH', style: TextStyle(color: Color(0xFFC09A52), fontSize: 12, letterSpacing: 3.5)),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    const Text('Research Laboratory', style: TextStyle(color: Color(0xFFF1E7D0), fontSize: 38)),
+                    const SizedBox(height: 8),
+                    const Text('Explore the language collection across all tables.', style: TextStyle(color: Color(0xFFA9A294), fontSize: 16)),
+                    const SizedBox(height: 28),
+                    _ResearchControls(
+                      searchController: _searchController,
+                      selectedTable: _selectedTable,
+                      onTableChanged: (value) => setState(() => _selectedTable = value),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildResults(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResults() {
+    final cards = _filteredCards;
+    if (cards.isEmpty) {
+      return const Center(
+        child: Text('No language cards match your search.', style: TextStyle(color: Color(0xFFAAA294), fontSize: 16)),
+      );
+    }
+    return GridView.builder(
+      key: const ValueKey('research-results'),
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 320, mainAxisExtent: 142, crossAxisSpacing: 14, mainAxisSpacing: 14),
+      itemCount: cards.length,
+      itemBuilder: (context, index) {
+        final card = cards[index];
+        return _ResearchResultCard(card: card, onTap: () => _showDetails(card));
+      },
+    );
+  }
+}
+
+class _ResearchControls extends StatelessWidget {
+  const _ResearchControls({required this.searchController, required this.selectedTable, required this.onTableChanged});
+
+  final TextEditingController searchController;
+  final String selectedTable;
+  final ValueChanged<String> onTableChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final search = TextField(
+          controller: searchController,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Search language cards',
+            hintText: 'Search by card text or table',
+            prefixIcon: Icon(Icons.search),
+            border: OutlineInputBorder(),
+          ),
+        );
+        final filter = DropdownButtonFormField<String>(
+          initialValue: selectedTable,
+          isExpanded: true,
+          decoration: const InputDecoration(labelText: 'Table', border: OutlineInputBorder()),
+          items: ['All Tables', ...languageTables.map((table) => table.name)].map((table) => DropdownMenuItem(value: table, child: Text(table, maxLines: 1, overflow: TextOverflow.ellipsis))).toList(),
+          onChanged: (value) {
+            if (value != null) onTableChanged(value);
+          },
+        );
+        if (constraints.maxWidth < 620) {
+          return Column(children: [search, const SizedBox(height: 12), filter]);
+        }
+        return Row(children: [Expanded(child: search), const SizedBox(width: 14), SizedBox(width: 250, child: filter)]);
+      },
+    );
+  }
+}
+
+class _ResearchResultCard extends StatelessWidget {
+  const _ResearchResultCard({required this.card, required this.onTap});
+
+  final LanguageCard card;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = card.category.color;
+    return Semantics(
+      button: true,
+      label: 'Open research details for ${card.text}',
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(15, 13, 15, 12),
+          decoration: BoxDecoration(color: const Color(0xFF151718), border: Border.all(color: color.withValues(alpha: 0.75)), boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 10, offset: Offset(0, 4))]),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(card.text, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFF0E6D2), fontSize: 16, height: 1.25)),
+              const Spacer(),
+              Text(card.tableName, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFA9A294), fontSize: 12)),
+              const SizedBox(height: 6),
+              Row(children: [Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)), const SizedBox(width: 7), Text(card.category.label, style: TextStyle(color: color, fontSize: 11)), const Spacer(), const Icon(Icons.open_in_new_rounded, size: 15, color: Color(0xFF80796C))]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailLabel extends StatelessWidget {
+  const _DetailLabel({required this.label, required this.value, this.color});
+
+  final String label;
+  final String value;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: const TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 1.5)), const SizedBox(height: 5), Text(value, style: TextStyle(color: color ?? const Color(0xFFE0D3B8), fontSize: 14, height: 1.35))]);
+  }
+}
