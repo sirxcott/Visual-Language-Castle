@@ -55,6 +55,8 @@ class ArchiveStorage {
         'from': connection.fromCardId,
         'to': connection.toCardId,
       }).toList(),
+      'isCompleted': work.isCompleted,
+      'completedAt': work.completedAt?.toIso8601String(),
     };
   }
 
@@ -78,12 +80,16 @@ class ArchiveStorage {
       .where((connection) => connection['from'] is String && connection['to'] is String)
       .map((connection) => CardConnection(fromCardId: connection['from'] as String, toCardId: connection['to'] as String))
       .toList();
+    final completedAtValue = json['completedAt'];
+    final completedAt = completedAtValue is String ? DateTime.tryParse(completedAtValue) : null;
     return ArchivedWork(
       id: json['id'] as String,
       name: json['name'] as String,
       savedAt: DateTime.parse(json['savedAt'] as String),
       cards: cards,
       connections: connections,
+      isCompleted: json['isCompleted'] is bool ? json['isCompleted'] as bool : false,
+      completedAt: completedAt,
     );
   }
 }

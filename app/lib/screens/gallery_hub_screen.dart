@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'archive_screen.dart';
+import 'completed_works_screen.dart';
 import 'practice_room_screen.dart';
 import 'research_laboratory_screen.dart';
 
@@ -60,6 +61,8 @@ class GalleryHubScreen extends StatelessWidget {
                                 ? () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const ArchiveScreen()))
                               : destination.$1 == 'Research Laboratory'
                                 ? () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const ResearchLaboratoryScreen()))
+                              : destination.$1 == 'Completed Works'
+                                ? () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const CompletedWorksScreen()))
                                 : null,
                           );
                         },

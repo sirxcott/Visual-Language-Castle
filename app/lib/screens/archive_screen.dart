@@ -35,6 +35,27 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
     _loadWorks();
   }
 
+  Future<void> _changeCompletion(ArchivedWork work) async {
+    final completing = !work.isCompleted;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF242627),
+        title: Text(completing ? 'Mark as completed?' : 'Return to Archive?'),
+        content: Text(completing ? 'Move "${work.name}" into Completed Works?' : 'Mark "${work.name}" as work in progress again?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(completing ? 'Complete' : 'Return')),
+        ],
+      ),
+    );
+    if (!mounted || confirmed != true) return;
+    work.isCompleted = completing;
+    work.completedAt = completing ? DateTime.now() : null;
+    await ArchiveStorage.instance.saveWorks(_works);
+    if (mounted) setState(() {});
+  }
+
   Future<void> _renameWork(ArchivedWork work) async {
     final controller = TextEditingController(text: work.name);
     final name = await showDialog<String>(
@@ -135,8 +156,13 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
             children: [
               const Icon(Icons.auto_awesome_mosaic_outlined, color: Color(0xFFC09A52), size: 28),
               const SizedBox(width: 14),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(work.name, style: const TextStyle(color: Color(0xFFE0D3B8), fontSize: 17)), const SizedBox(height: 5), Text('${_savedDate(work.savedAt)}  ·  ${work.cards.length} cards', style: const TextStyle(color: Color(0xFF80796C), fontSize: 12))])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [Flexible(child: Text(work.name, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFE0D3B8), fontSize: 17))), if (work.isCompleted) ...[const SizedBox(width: 10), const Icon(Icons.check_circle_outline, size: 16, color: Color(0xFF5D9A78)), const SizedBox(width: 5), const Text('Completed', style: TextStyle(color: Color(0xFF5D9A78), fontSize: 11))]]),
+                const SizedBox(height: 5),
+                Text('${_savedDate(work.savedAt)}  ·  ${work.cards.length} cards', style: const TextStyle(color: Color(0xFF80796C), fontSize: 12)),
+              ])),
               IconButton(tooltip: 'Open ${work.name}', onPressed: () => _openWork(work), icon: const Icon(Icons.open_in_new_rounded)),
+              IconButton(tooltip: work.isCompleted ? 'Return "${work.name}" to Archive' : 'Mark "${work.name}" complete', onPressed: () => _changeCompletion(work), icon: Icon(work.isCompleted ? Icons.undo_rounded : Icons.check_circle_outline, color: work.isCompleted ? const Color(0xFFC09A52) : const Color(0xFF5D9A78))),
               IconButton(tooltip: 'Rename ${work.name}', onPressed: () => _renameWork(work), icon: const Icon(Icons.edit_outlined)),
               IconButton(tooltip: 'Delete ${work.name}', onPressed: () => _deleteWork(work), icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFC4776E))),
             ],

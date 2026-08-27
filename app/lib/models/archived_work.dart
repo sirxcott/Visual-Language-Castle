@@ -7,6 +7,8 @@ class ArchivedWork {
     required this.savedAt,
     required this.cards,
     this.connections = const [],
+    this.isCompleted = false,
+    this.completedAt,
   });
 
   final String id;
@@ -14,6 +16,8 @@ class ArchivedWork {
   DateTime savedAt;
   final List<WorkspaceCard> cards;
   final List<CardConnection> connections;
+  bool isCompleted;
+  DateTime? completedAt;
 }
 
 class CardConnection {
