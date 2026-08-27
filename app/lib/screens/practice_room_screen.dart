@@ -9,9 +9,10 @@ import '../widgets/table_browser.dart';
 import '../widgets/workspace_card.dart';
 
 class PracticeRoomScreen extends StatefulWidget {
-  const PracticeRoomScreen({super.key, this.initialCards});
+  const PracticeRoomScreen({super.key, this.initialCards, this.initialConnections});
 
   final List<WorkspaceCard>? initialCards;
+  final List<CardConnection>? initialConnections;
 
   @override
   State<PracticeRoomScreen> createState() => _PracticeRoomScreenState();
@@ -20,11 +21,15 @@ class PracticeRoomScreen extends StatefulWidget {
 class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
   int _tableIndex = 0;
   final List<WorkspaceCard> _workspaceCards = [];
+  final List<CardConnection> _connections = [];
+  bool _connectionMode = false;
+  String? _connectionStartId;
 
   @override
   void initState() {
     super.initState();
     if (widget.initialCards != null) _workspaceCards.addAll(widget.initialCards!);
+    if (widget.initialConnections != null) _connections.addAll(widget.initialConnections!);
   }
 
   Future<void> _saveToArchive() async {
@@ -79,6 +84,7 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
         name: name,
         savedAt: DateTime.now(),
         cards: _workspaceCards.map((card) => WorkspaceCard(card: card.card, position: card.position, notes: card.notes)).toList(),
+        connections: List<CardConnection>.of(_connections),
       ),
     );
     await ArchiveStorage.instance.saveWorks(works);
@@ -99,6 +105,52 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
       (localPosition.dy - 40).clamp(12.0, double.infinity),
     );
     setState(() => _workspaceCards.add(WorkspaceCard(card: card, position: position)));
+  }
+
+  void _toggleConnectionMode() {
+    setState(() {
+      _connectionMode = !_connectionMode;
+      _connectionStartId = null;
+    });
+  }
+
+  void _selectCardForConnection(WorkspaceCard card) {
+    if (!_connectionMode) return;
+    setState(() {
+      if (_connectionStartId == null) {
+        _connectionStartId = card.card.id;
+        return;
+      }
+      if (_connectionStartId == card.card.id) return;
+      final exists = _connections.any((connection) => connection.fromCardId == _connectionStartId && connection.toCardId == card.card.id);
+      if (!exists) _connections.add(CardConnection(fromCardId: _connectionStartId!, toCardId: card.card.id));
+      _connectionStartId = null;
+    });
+  }
+
+  void _removeConnectionAt(Offset point) {
+    if (!_connectionMode) return;
+    for (var index = _connections.length - 1; index >= 0; index--) {
+      final connection = _connections[index];
+      final fromMatches = _workspaceCards.where((card) => card.card.id == connection.fromCardId);
+      final toMatches = _workspaceCards.where((card) => card.card.id == connection.toCardId);
+      if (fromMatches.isEmpty || toMatches.isEmpty) continue;
+      final start = fromMatches.first.position + const Offset(95, 40);
+      final end = toMatches.first.position + const Offset(95, 40);
+      if (_distanceToSegment(point, start, end) < 12) {
+        setState(() => _connections.removeAt(index));
+        return;
+      }
+    }
+  }
+
+  double _distanceToSegment(Offset point, Offset start, Offset end) {
+    final delta = end - start;
+    final lengthSquared = delta.dx * delta.dx + delta.dy * delta.dy;
+    if (lengthSquared == 0) return (point - start).distance;
+    final projection = ((point.dx - start.dx) * delta.dx + (point.dy - start.dy) * delta.dy) / lengthSquared;
+    final t = projection.clamp(0.0, 1.0);
+    return (point - Offset(start.dx + delta.dx * t, start.dy + delta.dy * t)).distance;
   }
 
   Future<void> _editNotes(WorkspaceCard workspaceCard) async {
@@ -165,7 +217,7 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              _RoomHeader(onBack: () => Navigator.of(context).pop(), onSave: _saveToArchive),
+              _RoomHeader(onBack: () => Navigator.of(context).pop(), onSave: _saveToArchive, connectionMode: _connectionMode, onToggleConnections: _toggleConnectionMode),
               Expanded(
                 child: Row(
                   children: [
@@ -188,6 +240,13 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
                               fit: StackFit.expand,
                               children: [
                                 const _WorkspaceBackdrop(),
+                                Positioned.fill(
+                                  child: GestureDetector(
+                                    behavior: HitTestBehavior.translucent,
+                                    onTapUp: (details) => _removeConnectionAt(details.localPosition),
+                                    child: CustomPaint(painter: _ConnectionsPainter(cards: _workspaceCards, connections: _connections)),
+                                  ),
+                                ),
                                 if (_workspaceCards.isEmpty) const _EmptyWorkspaceHint(),
                                 if (candidateData.isNotEmpty) const _DropHighlight(),
                                 ..._workspaceCards.map(
@@ -196,6 +255,9 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
                                     workspaceCard: workspaceCard,
                                     onPositionChanged: (position) => setState(() => workspaceCard.position = position),
                                     onOpenNotes: () => _editNotes(workspaceCard),
+                                    connectionMode: _connectionMode,
+                                    isConnectionStart: _connectionStartId == workspaceCard.card.id,
+                                    onSelectForConnection: () => _selectCardForConnection(workspaceCard),
                                   ),
                                 ),
                               ],
@@ -216,13 +278,16 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
 }
 
 class _RoomHeader extends StatelessWidget {
-  const _RoomHeader({required this.onBack, required this.onSave});
+  const _RoomHeader({required this.onBack, required this.onSave, required this.connectionMode, required this.onToggleConnections});
 
   final VoidCallback onBack;
   final VoidCallback onSave;
+  final bool connectionMode;
+  final VoidCallback onToggleConnections;
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width < 900;
     return Container(
       height: 66,
       padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -241,12 +306,66 @@ class _RoomHeader extends StatelessWidget {
             ],
           ),
           const Spacer(),
-          FilledButton.icon(onPressed: onSave, icon: const Icon(Icons.archive_outlined, size: 17), label: const Text('Save to Archive')),
+          if (compact)
+            IconButton(
+              tooltip: connectionMode ? 'Exit Connections' : 'Connections',
+              onPressed: onToggleConnections,
+              icon: Icon(connectionMode ? Icons.link_off : Icons.account_tree_outlined),
+            )
+          else
+            FilledButton.icon(onPressed: onToggleConnections, icon: Icon(connectionMode ? Icons.link_off : Icons.account_tree_outlined, size: 17), label: Text(connectionMode ? 'Exit Connections' : 'Connections')),
+          const SizedBox(width: 10),
+          if (compact)
+            IconButton(tooltip: 'Save to Archive', onPressed: onSave, icon: const Icon(Icons.archive_outlined))
+          else
+            FilledButton.icon(onPressed: onSave, icon: const Icon(Icons.archive_outlined, size: 17), label: const Text('Save to Archive')),
           const SizedBox(width: 10),
         ],
       ),
     );
   }
+}
+
+class _ConnectionsPainter extends CustomPainter {
+  const _ConnectionsPainter({required this.cards, required this.connections});
+
+  final List<WorkspaceCard> cards;
+  final List<CardConnection> connections;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFFC09A52).withValues(alpha: 0.72)
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+    final arrowPaint = Paint()..color = paint.color..style = PaintingStyle.fill;
+    for (final connection in connections) {
+      final fromMatches = cards.where((card) => card.card.id == connection.fromCardId);
+      final toMatches = cards.where((card) => card.card.id == connection.toCardId);
+      if (fromMatches.isEmpty || toMatches.isEmpty) continue;
+      final start = fromMatches.first.position + const Offset(95, 40);
+      final end = toMatches.first.position + const Offset(95, 40);
+      canvas.drawLine(start, end, paint);
+      final direction = end - start;
+      final length = direction.distance;
+      if (length == 0) continue;
+      final unit = direction / length;
+      final tip = end - unit * 92;
+      final base = tip - unit * 12;
+      final normal = Offset(-unit.dy, unit.dx) * 5;
+      canvas.drawPath(
+        Path()
+          ..moveTo(tip.dx, tip.dy)
+          ..lineTo((base + normal).dx, (base + normal).dy)
+          ..lineTo((base - normal).dx, (base - normal).dy)
+          ..close(),
+        arrowPaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ConnectionsPainter oldDelegate) => true;
 }
 
 class _WorkspaceBackdrop extends StatelessWidget {

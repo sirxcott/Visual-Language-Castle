@@ -8,11 +8,17 @@ class WorkspaceCardTile extends StatelessWidget {
     required this.workspaceCard,
     required this.onPositionChanged,
     required this.onOpenNotes,
+    this.connectionMode = false,
+    this.isConnectionStart = false,
+    this.onSelectForConnection,
   });
 
   final WorkspaceCard workspaceCard;
   final ValueChanged<Offset> onPositionChanged;
   final VoidCallback onOpenNotes;
+  final bool connectionMode;
+  final bool isConnectionStart;
+  final VoidCallback? onSelectForConnection;
 
   @override
   Widget build(BuildContext context) {
@@ -22,15 +28,16 @@ class WorkspaceCardTile extends StatelessWidget {
       left: workspaceCard.position.dx,
       top: workspaceCard.position.dy,
       child: GestureDetector(
+        onTap: connectionMode ? onSelectForConnection : null,
         onDoubleTap: onOpenNotes,
-        onPanUpdate: (details) => onPositionChanged(workspaceCard.position + details.delta),
+        onPanUpdate: connectionMode ? null : (details) => onPositionChanged(workspaceCard.position + details.delta),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minWidth: 150, maxWidth: 240),
           child: Container(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 11),
             decoration: BoxDecoration(
               color: const Color(0xFF202324),
-              border: Border.all(color: color.withValues(alpha: 0.85)),
+              border: Border.all(color: isConnectionStart ? const Color(0xFFF0E6D2) : color.withValues(alpha: 0.85), width: isConnectionStart ? 2 : 1),
               boxShadow: const [BoxShadow(color: Colors.black87, blurRadius: 14, offset: Offset(0, 6))],
             ),
             child: Column(

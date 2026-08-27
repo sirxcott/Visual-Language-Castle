@@ -51,6 +51,10 @@ class ArchiveStorage {
           'y': workspaceCard.position.dy,
         };
       }).toList(),
+      'connections': work.connections.map((connection) => {
+        'from': connection.fromCardId,
+        'to': connection.toCardId,
+      }).toList(),
     };
   }
 
@@ -69,11 +73,17 @@ class ArchiveStorage {
         position: Offset((card['x'] as num).toDouble(), (card['y'] as num).toDouble()),
       );
     }).toList();
+    final connections = (json['connections'] as List<dynamic>? ?? [])
+      .whereType<Map<String, dynamic>>()
+      .where((connection) => connection['from'] is String && connection['to'] is String)
+      .map((connection) => CardConnection(fromCardId: connection['from'] as String, toCardId: connection['to'] as String))
+      .toList();
     return ArchivedWork(
       id: json['id'] as String,
       name: json['name'] as String,
       savedAt: DateTime.parse(json['savedAt'] as String),
       cards: cards,
+      connections: connections,
     );
   }
 }
