@@ -8,7 +8,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:visual_language_castle/data/language_tables.dart';
 import 'package:visual_language_castle/main.dart';
+import 'package:visual_language_castle/screens/archive_screen.dart';
 import 'package:visual_language_castle/screens/practice_room_screen.dart';
 
 void main() {
@@ -52,5 +54,21 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: PracticeRoomScreen()));
     expect(find.text('TABLE BROWSER'), findsOneWidget);
     expect(find.text('Nominals'), findsOneWidget);
+
+    for (var index = 0; index < 8; index++) {
+      await tester.tap(find.byTooltip('Next table (D)'));
+      await tester.pump();
+    }
+    expect(find.text('TRANCE WORDPLAY'), findsOneWidget);
+    expect(find.text('Trance-position'), findsOneWidget);
+    expect(languageTables.last.cards.map((card) => card.text), contains('trance-formation'));
+    expect(languageTables.last.cards.map((card) => card.text), contains('form-uh-trance'));
+  });
+
+  testWidgets('archive screen renders as a functional destination', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: ArchiveScreen()));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Archive'), findsOneWidget);
   });
 }

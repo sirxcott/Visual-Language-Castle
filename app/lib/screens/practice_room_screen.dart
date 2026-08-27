@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../data/language_tables.dart';
+import '../models/archived_work.dart';
 import '../models/language_card.dart';
+import '../services/archive_storage.dart';
 import '../widgets/table_browser.dart';
 import '../widgets/workspace_card.dart';
 
 class PracticeRoomScreen extends StatefulWidget {
-  const PracticeRoomScreen({super.key});
+  const PracticeRoomScreen({super.key, this.initialCards});
+
+  final List<WorkspaceCard>? initialCards;
 
   @override
   State<PracticeRoomScreen> createState() => _PracticeRoomScreenState();
@@ -16,6 +20,71 @@ class PracticeRoomScreen extends StatefulWidget {
 class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
   int _tableIndex = 0;
   final List<WorkspaceCard> _workspaceCards = [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialCards != null) _workspaceCards.addAll(widget.initialCards!);
+  }
+
+  Future<void> _saveToArchive() async {
+    final nameController = TextEditingController();
+    var nameError = false;
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: const Color(0xFF242627),
+          title: const Text('Save to Archive'),
+          content: TextField(
+            controller: nameController,
+            autofocus: true,
+            decoration: InputDecoration(
+              labelText: 'Work name',
+              hintText: 'Name this wall arrangement',
+              errorText: nameError ? 'A work name is required' : null,
+            ),
+            onSubmitted: (value) {
+              if (value.trim().isEmpty) {
+                setDialogState(() => nameError = true);
+              } else {
+                Navigator.pop(context, value.trim());
+              }
+            },
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            FilledButton(
+              onPressed: () {
+                final value = nameController.text.trim();
+                if (value.isEmpty) {
+                  setDialogState(() => nameError = true);
+                } else {
+                  Navigator.pop(context, value);
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+    nameController.dispose();
+    if (!mounted || name == null || name.isEmpty) return;
+    final works = await ArchiveStorage.instance.loadWorks();
+    works.insert(
+      0,
+      ArchivedWork(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        name: name,
+        savedAt: DateTime.now(),
+        cards: _workspaceCards.map((card) => WorkspaceCard(card: card.card, position: card.position, notes: card.notes)).toList(),
+      ),
+    );
+    await ArchiveStorage.instance.saveWorks(works);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved to Archive')));
+  }
 
   void _changeTable(int amount) {
     setState(() {
@@ -39,12 +108,27 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF242627),
         title: Text(workspaceCard.card.text, style: const TextStyle(color: Color(0xFFF0E6D2), fontSize: 18)),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLines: 5,
-          style: const TextStyle(color: Color(0xFFF0E6D2)),
-          decoration: const InputDecoration(hintText: 'Add a note for this card', border: OutlineInputBorder()),
+        content: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('REFERENCE NOTE', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 1.5)),
+              const SizedBox(height: 6),
+              Text(workspaceCard.card.referenceNote.isEmpty ? 'No reference note supplied.' : workspaceCard.card.referenceNote, style: const TextStyle(color: Color(0xFFAAA294), fontSize: 13, height: 1.35)),
+              const SizedBox(height: 18),
+              const Text('YOUR NOTES', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 1.5)),
+              const SizedBox(height: 6),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                maxLines: 5,
+                style: const TextStyle(color: Color(0xFFF0E6D2)),
+                decoration: const InputDecoration(hintText: 'Add a note for this card', border: OutlineInputBorder()),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
@@ -81,7 +165,7 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              _RoomHeader(onBack: () => Navigator.of(context).pop()),
+              _RoomHeader(onBack: () => Navigator.of(context).pop(), onSave: _saveToArchive),
               Expanded(
                 child: Row(
                   children: [
@@ -132,9 +216,10 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
 }
 
 class _RoomHeader extends StatelessWidget {
-  const _RoomHeader({required this.onBack});
+  const _RoomHeader({required this.onBack, required this.onSave});
 
   final VoidCallback onBack;
+  final VoidCallback onSave;
 
   @override
   Widget build(BuildContext context) {
@@ -156,9 +241,8 @@ class _RoomHeader extends StatelessWidget {
             ],
           ),
           const Spacer(),
-          const Icon(Icons.account_tree_outlined, color: Color(0xFF827967), size: 18),
-          const SizedBox(width: 8),
-          const Text('Connections coming later', style: TextStyle(color: Color(0xFF827967), fontSize: 11)),
+          FilledButton.icon(onPressed: onSave, icon: const Icon(Icons.archive_outlined, size: 17), label: const Text('Save to Archive')),
+          const SizedBox(width: 10),
         ],
       ),
     );

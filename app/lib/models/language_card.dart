@@ -9,6 +9,7 @@ enum CardCategory {
   darkBlue,
   lightBlue,
   lyModifier,
+  tranceWordplay,
 }
 
 extension CardCategoryDetails on CardCategory {
@@ -30,6 +31,8 @@ extension CardCategoryDetails on CardCategory {
         return 'Cause and Effect';
       case CardCategory.lyModifier:
         return 'LY Modifier';
+      case CardCategory.tranceWordplay:
+        return 'Trance Wordplay';
     }
   }
 
@@ -51,6 +54,8 @@ extension CardCategoryDetails on CardCategory {
         return const Color(0xFF66A6B8);
       case CardCategory.lyModifier:
         return const Color(0xFF7893C7);
+      case CardCategory.tranceWordplay:
+        return const Color(0xFF8D527F);
     }
   }
 }
@@ -61,12 +66,14 @@ class LanguageCard {
     required this.text,
     required this.category,
     required this.tableName,
+    this.referenceNote = '',
   });
 
   final String id;
   final String text;
   final CardCategory category;
   final String tableName;
+  final String referenceNote;
 }
 
 class WorkspaceCard {

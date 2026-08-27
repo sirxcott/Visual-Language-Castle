@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'archive_screen.dart';
 import 'practice_room_screen.dart';
 
 class GalleryHubScreen extends StatelessWidget {
@@ -54,6 +55,8 @@ class GalleryHubScreen extends StatelessWidget {
                             icon: destination.$2,
                             onTap: destination.$1 == 'Practice Rooms'
                                 ? () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PracticeRoomScreen()))
+                              : destination.$1 == 'Archive'
+                                ? () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const ArchiveScreen()))
                                 : null,
                           );
                         },
