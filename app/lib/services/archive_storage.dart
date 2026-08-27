@@ -42,6 +42,7 @@ class ArchiveStorage {
         final card = workspaceCard.card;
         return {
           'id': card.id,
+            'instanceId': workspaceCard.instanceId,
           'text': card.text,
           'category': card.category.name,
           'tableName': card.tableName,
@@ -61,9 +62,14 @@ class ArchiveStorage {
   }
 
   ArchivedWork _fromJson(Map<String, dynamic> json) {
-    final cards = (json['cards'] as List<dynamic>).map((item) {
+    final archiveId = json['id'] as String;
+    final rawCards = json['cards'] as List<dynamic>;
+    final cards = rawCards.asMap().entries.map((entry) {
+      final index = entry.key;
+      final item = entry.value;
       final card = item as Map<String, dynamic>;
       return WorkspaceCard(
+        instanceId: card['instanceId'] as String? ?? 'legacy-$archiveId-$index',
         card: LanguageCard(
           id: card['id'] as String,
           text: card['text'] as String,
@@ -75,15 +81,28 @@ class ArchiveStorage {
         position: Offset((card['x'] as num).toDouble(), (card['y'] as num).toDouble()),
       );
     }).toList();
+    final cardInstancesBySourceId = <String, List<String>>{};
+    for (final workspaceCard in cards) {
+      cardInstancesBySourceId.putIfAbsent(workspaceCard.card.id, () => []).add(workspaceCard.instanceId);
+    }
+    final instanceIds = cards.map((card) => card.instanceId).toSet();
     final connections = (json['connections'] as List<dynamic>? ?? [])
       .whereType<Map<String, dynamic>>()
       .where((connection) => connection['from'] is String && connection['to'] is String)
-      .map((connection) => CardConnection(fromCardId: connection['from'] as String, toCardId: connection['to'] as String))
+      .map((connection) {
+        final from = connection['from'] as String;
+        final to = connection['to'] as String;
+        final fromId = instanceIds.contains(from) ? from : cardInstancesBySourceId[from]?.firstOrNull;
+        final toId = instanceIds.contains(to) ? to : cardInstancesBySourceId[to]?.firstOrNull;
+        if (fromId == null || toId == null) return null;
+        return CardConnection(fromCardId: fromId, toCardId: toId);
+      })
+      .whereType<CardConnection>()
       .toList();
     final completedAtValue = json['completedAt'];
     final completedAt = completedAtValue is String ? DateTime.tryParse(completedAtValue) : null;
     return ArchivedWork(
-      id: json['id'] as String,
+      id: archiveId,
       name: json['name'] as String,
       savedAt: DateTime.parse(json['savedAt'] as String),
       cards: cards,

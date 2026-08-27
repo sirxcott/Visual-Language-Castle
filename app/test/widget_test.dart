@@ -10,10 +10,46 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:visual_language_castle/data/language_tables.dart';
 import 'package:visual_language_castle/main.dart';
+import 'package:visual_language_castle/models/archived_work.dart';
+import 'package:visual_language_castle/models/language_card.dart';
 import 'package:visual_language_castle/screens/archive_screen.dart';
 import 'package:visual_language_castle/screens/practice_room_screen.dart';
 
 void main() {
+  test('workspace copies have independent instance identities', () {
+    final sourceCard = languageTables.first.cards.first;
+    final first = WorkspaceCard(card: sourceCard, position: Offset.zero);
+    final second = WorkspaceCard(card: sourceCard, position: const Offset(100, 100));
+
+    expect(first.card.id, second.card.id);
+    expect(first.instanceId, isNot(second.instanceId));
+    final connection = CardConnection(fromCardId: first.instanceId, toCardId: second.instanceId);
+    expect(connection.fromCardId, isNot(connection.toCardId));
+  });
+
+  testWidgets('working wall remove control follows the live practice room path', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: PracticeRoomScreen()));
+    await tester.drag(find.text('the room'), const Offset(360, 180));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Remove from wall'), findsOneWidget);
+    expect(find.text('×'), findsOneWidget);
+    await tester.tap(find.byTooltip('Connections'));
+    await tester.pump();
+    expect(find.byTooltip('Remove from wall'), findsNothing);
+
+    await tester.tap(find.byTooltip('Exit Connections'));
+    await tester.pump();
+    await tester.tap(find.text('×'));
+    await tester.pumpAndSettle();
+    expect(find.text('Remove card?'), findsOneWidget);
+    expect(find.text('Remove "the room" from the Working Wall?'), findsOneWidget);
+    await tester.tap(find.text('Remove'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Remove from wall'), findsNothing);
+    expect(find.text('the room'), findsOneWidget);
+  });
+
   testWidgets('entrance opens into the gallery hall', (WidgetTester tester) async {
     await tester.pumpWidget(const VisualLanguageCastleApp());
 

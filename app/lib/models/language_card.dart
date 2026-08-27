@@ -80,10 +80,19 @@ class WorkspaceCard {
   WorkspaceCard({
     required this.card,
     required this.position,
+    String? instanceId,
     this.notes = '',
-  });
+  }) : instanceId = instanceId ?? _newWorkspaceInstanceId();
 
   final LanguageCard card;
+  final String instanceId;
   Offset position;
   String notes;
+}
+
+var _workspaceInstanceSequence = 0;
+
+String _newWorkspaceInstanceId() {
+  _workspaceInstanceSequence++;
+  return 'workspace-${DateTime.now().microsecondsSinceEpoch}-$_workspaceInstanceSequence';
 }

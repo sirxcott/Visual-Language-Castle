@@ -83,7 +83,7 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
         id: DateTime.now().microsecondsSinceEpoch.toString(),
         name: name,
         savedAt: DateTime.now(),
-        cards: _workspaceCards.map((card) => WorkspaceCard(card: card.card, position: card.position, notes: card.notes)).toList(),
+        cards: _workspaceCards.map((card) => WorkspaceCard(instanceId: card.instanceId, card: card.card, position: card.position, notes: card.notes)).toList(),
         connections: List<CardConnection>.of(_connections),
       ),
     );
@@ -118,13 +118,34 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
     if (!_connectionMode) return;
     setState(() {
       if (_connectionStartId == null) {
-        _connectionStartId = card.card.id;
+        _connectionStartId = card.instanceId;
         return;
       }
-      if (_connectionStartId == card.card.id) return;
-      final exists = _connections.any((connection) => connection.fromCardId == _connectionStartId && connection.toCardId == card.card.id);
-      if (!exists) _connections.add(CardConnection(fromCardId: _connectionStartId!, toCardId: card.card.id));
+      if (_connectionStartId == card.instanceId) return;
+      final exists = _connections.any((connection) => connection.fromCardId == _connectionStartId && connection.toCardId == card.instanceId);
+      if (!exists) _connections.add(CardConnection(fromCardId: _connectionStartId!, toCardId: card.instanceId));
       _connectionStartId = null;
+    });
+  }
+
+  Future<void> _removeCard(WorkspaceCard workspaceCard) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF242627),
+        title: const Text('Remove card?'),
+        content: Text('Remove "${workspaceCard.card.text}" from the Working Wall?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Remove')),
+        ],
+      ),
+    );
+    if (!mounted || confirmed != true) return;
+    setState(() {
+      _workspaceCards.removeWhere((card) => card.instanceId == workspaceCard.instanceId);
+      _connections.removeWhere((connection) => connection.fromCardId == workspaceCard.instanceId || connection.toCardId == workspaceCard.instanceId);
+      if (_connectionStartId == workspaceCard.instanceId) _connectionStartId = null;
     });
   }
 
@@ -132,8 +153,8 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
     if (!_connectionMode) return;
     for (var index = _connections.length - 1; index >= 0; index--) {
       final connection = _connections[index];
-      final fromMatches = _workspaceCards.where((card) => card.card.id == connection.fromCardId);
-      final toMatches = _workspaceCards.where((card) => card.card.id == connection.toCardId);
+      final fromMatches = _workspaceCards.where((card) => card.instanceId == connection.fromCardId);
+      final toMatches = _workspaceCards.where((card) => card.instanceId == connection.toCardId);
       if (fromMatches.isEmpty || toMatches.isEmpty) continue;
       final start = fromMatches.first.position + const Offset(95, 40);
       final end = toMatches.first.position + const Offset(95, 40);
@@ -251,12 +272,13 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
                                 if (candidateData.isNotEmpty) const _DropHighlight(),
                                 ..._workspaceCards.map(
                                   (workspaceCard) => WorkspaceCardTile(
-                                    key: ValueKey(workspaceCard.card.id),
+                                    key: ValueKey(workspaceCard.instanceId),
                                     workspaceCard: workspaceCard,
                                     onPositionChanged: (position) => setState(() => workspaceCard.position = position),
                                     onOpenNotes: () => _editNotes(workspaceCard),
+                                    onRemove: () => _removeCard(workspaceCard),
                                     connectionMode: _connectionMode,
-                                    isConnectionStart: _connectionStartId == workspaceCard.card.id,
+                                    isConnectionStart: _connectionStartId == workspaceCard.instanceId,
                                     onSelectForConnection: () => _selectCardForConnection(workspaceCard),
                                   ),
                                 ),
@@ -338,10 +360,10 @@ class _ConnectionsPainter extends CustomPainter {
       ..color = const Color(0xFFC09A52).withValues(alpha: 0.72)
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
-    final arrowPaint = Paint()..color = paint.color..style = PaintingStyle.fill;
+    final arrowPaint = Paint()..color = const Color(0xFFE0B96B)..style = PaintingStyle.fill;
     for (final connection in connections) {
-      final fromMatches = cards.where((card) => card.card.id == connection.fromCardId);
-      final toMatches = cards.where((card) => card.card.id == connection.toCardId);
+      final fromMatches = cards.where((card) => card.instanceId == connection.fromCardId);
+      final toMatches = cards.where((card) => card.instanceId == connection.toCardId);
       if (fromMatches.isEmpty || toMatches.isEmpty) continue;
       final start = fromMatches.first.position + const Offset(95, 40);
       final end = toMatches.first.position + const Offset(95, 40);
@@ -350,8 +372,9 @@ class _ConnectionsPainter extends CustomPainter {
       final length = direction.distance;
       if (length == 0) continue;
       final unit = direction / length;
-      final tip = end - unit * 92;
-      final base = tip - unit * 12;
+      final midpoint = Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2);
+      final tip = midpoint + unit * 7;
+      final base = midpoint - unit * 7;
       final normal = Offset(-unit.dy, unit.dx) * 5;
       canvas.drawPath(
         Path()
