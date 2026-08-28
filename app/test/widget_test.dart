@@ -183,6 +183,37 @@ void main() {
     expect(find.text('Recovered'), findsOneWidget);
   });
 
+  testWidgets('card addition and removal restore the archived dirty baseline', (WidgetTester tester) async {
+    final work = _testWork(id: 'card-change', name: 'Card Change');
+    await tester.pumpWidget(MaterialApp(home: PracticeRoomScreen(initialCards: work.cards, initialConnections: work.connections, sourceWork: work)));
+    await tester.drag(find.text('the room').first, const Offset(420, 120));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Return to Gallery Hall'));
+    await tester.pumpAndSettle();
+    expect(find.text('Unsaved changes'), findsOneWidget);
+    await tester.tap(find.text('Return to Editing'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Remove from wall').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Return to Gallery Hall'));
+    await tester.pumpAndSettle();
+    expect(find.text('Unsaved changes'), findsNothing);
+  });
+
+  testWidgets('Completed Works load retry succeeds with injected storage', (WidgetTester tester) async {
+    final storage = ArchiveStorage.inMemory([_testWork(id: 'completed-retry', name: 'Recovered', isCompleted: true)], StateError('temporary failure'));
+    await tester.pumpWidget(MaterialApp(home: CompletedWorksScreen(storage: storage)));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Retry'), findsOneWidget);
+    storage.clearLoadError();
+    tester.widget<SnackBarAction>(find.byType(SnackBarAction)).onPressed();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Recovered'), findsOneWidget);
+  });
+
   test('archive decoder preserves valid records around malformed records', () {
     final contents = jsonEncode([
       _archiveJson(id: 'valid-1', name: 'First'),
