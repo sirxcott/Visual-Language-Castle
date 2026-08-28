@@ -103,6 +103,86 @@ void main() {
     expect(find.text('Unable to load Archive'), findsOneWidget);
   });
 
+  testWidgets('unchanged archived work leaves without a prompt', (WidgetTester tester) async {
+    final work = _testWork(id: 'unchanged', name: 'Unchanged');
+    await tester.pumpWidget(MaterialApp(home: PracticeRoomScreen(initialCards: work.cards, initialConnections: work.connections, sourceWork: work)));
+    await tester.tap(find.byTooltip('Return to Gallery Hall'));
+    await tester.pumpAndSettle();
+    expect(find.text('Unsaved changes'), findsNothing);
+  });
+
+  testWidgets('edited archived work can return to editing or discard', (WidgetTester tester) async {
+    final work = _testWork(id: 'edited', name: 'Edited');
+    await tester.pumpWidget(MaterialApp(home: PracticeRoomScreen(initialCards: work.cards, initialConnections: work.connections, sourceWork: work)));
+    await tester.drag(find.text('the room').last, const Offset(100, 40));
+    await tester.tap(find.byTooltip('Return to Gallery Hall'));
+    await tester.pumpAndSettle();
+    expect(find.text('Return to Editing'), findsOneWidget);
+    await tester.tap(find.text('Return to Editing'));
+    await tester.pumpAndSettle();
+    expect(find.text('The Working Wall'), findsOneWidget);
+    await tester.tap(find.byTooltip('Return to Gallery Hall'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Discard Changes'));
+    await tester.pumpAndSettle();
+    expect(find.text('The Working Wall'), findsNothing);
+  });
+
+  testWidgets('Update Archive clears the dirty state', (WidgetTester tester) async {
+    final storage = ArchiveStorage.inMemory();
+    final work = _testWork(id: 'update-dirty', name: 'Update Dirty');
+    await storage.saveWorks([work]);
+    await tester.pumpWidget(MaterialApp(home: PracticeRoomScreen(initialCards: work.cards, initialConnections: work.connections, sourceWork: work, storage: storage)));
+    await tester.drag(find.text('the room').last, const Offset(100, 40));
+    await tester.tap(find.byTooltip('Update Archive'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Update'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Return to Gallery Hall'));
+    await tester.pumpAndSettle();
+    expect(find.text('Unsaved changes'), findsNothing);
+  });
+
+  testWidgets('notes and connections mark archived work dirty', (WidgetTester tester) async {
+    final first = _testWork(id: 'mutations', name: 'Mutations');
+    final secondCard = WorkspaceCard(instanceId: 'mutations-second', card: languageTables[1].cards.first, position: const Offset(320, 80));
+    final work = ArchivedWork(id: first.id, name: first.name, savedAt: first.savedAt, cards: [first.cards.single, secondCard]);
+    await tester.pumpWidget(MaterialApp(home: PracticeRoomScreen(initialCards: work.cards, initialConnections: work.connections, sourceWork: work)));
+
+    await tester.tap(find.text('the room').last);
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.text('the room').last);
+    await tester.pumpAndSettle();
+    expect(find.text('YOUR NOTES'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'changed note');
+    await tester.tap(find.text('Save note'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Return to Gallery Hall'));
+    await tester.pumpAndSettle();
+    expect(find.text('Return to Editing'), findsOneWidget);
+    await tester.tap(find.text('Return to Editing'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Connections'));
+    await tester.tap(find.text('the room').last);
+    await tester.tap(find.text('notice'));
+    await tester.tap(find.byTooltip('Return to Gallery Hall'));
+    await tester.pumpAndSettle();
+    expect(find.text('Discard Changes'), findsOneWidget);
+  });
+
+  testWidgets('Archive load retry succeeds with injected storage', (WidgetTester tester) async {
+    final storage = ArchiveStorage.inMemory([_testWork(id: 'retry', name: 'Recovered')], StateError('temporary failure'));
+    await tester.pumpWidget(MaterialApp(home: ArchiveScreen(storage: storage)));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Retry'), findsOneWidget);
+    storage.clearLoadError();
+    tester.widget<SnackBarAction>(find.byType(SnackBarAction)).onPressed();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Recovered'), findsOneWidget);
+  });
+
   test('archive decoder preserves valid records around malformed records', () {
     final contents = jsonEncode([
       _archiveJson(id: 'valid-1', name: 'First'),

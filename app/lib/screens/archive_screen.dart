@@ -34,7 +34,7 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
       setState(() => _isLoading = false);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        _showStorageError('Unable to load Archive');
+        _showStorageError('Unable to load Archive', onRetry: _loadWorks);
       });
       return;
     }
@@ -50,8 +50,8 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
     _loadWorks();
   }
 
-  void _showStorageError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  void _showStorageError(String message, {VoidCallback? onRetry}) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), action: onRetry == null ? null : SnackBarAction(label: 'Retry', onPressed: onRetry)));
   }
 
   Future<void> _changeCompletion(ArchivedWork work) async {

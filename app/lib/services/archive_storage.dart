@@ -11,16 +11,17 @@ class ArchiveStorage {
 
   ArchiveStorage.forTesting(File file, {Object? loadError}) : this._(fileOverride: file, loadError: loadError);
 
-  ArchiveStorage.inMemory([List<ArchivedWork> works = const []]) : this._(memoryWorks: List<ArchivedWork>.of(works));
+  ArchiveStorage.inMemory([List<ArchivedWork> works = const [], Object? loadError]) : this._(memoryWorks: List<ArchivedWork>.of(works), loadError: loadError);
 
   static final ArchiveStorage instance = ArchiveStorage._();
 
   final File? _fileOverride;
   final List<ArchivedWork>? _memoryWorks;
-  final Object? _loadError;
+  Object? _loadError;
 
   Future<List<ArchivedWork>> loadWorks() async {
-    if (_loadError != null) throw _loadError;
+    final loadError = _loadError;
+    if (loadError != null) throw loadError;
     if (_memoryWorks != null) return List<ArchivedWork>.of(_memoryWorks);
     final file = await _file;
     if (!await file.exists()) return [];
@@ -32,6 +33,10 @@ class ArchiveStorage {
     } on TypeError {
       return [];
     }
+  }
+
+  void clearLoadError() {
+    _loadError = null;
   }
 
   List<ArchivedWork> decodeWorks(String contents) {

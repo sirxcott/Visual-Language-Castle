@@ -28,12 +28,60 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
   final List<CardConnection> _connections = [];
   bool _connectionMode = false;
   String? _connectionStartId;
+  late String _initialArchiveSnapshot;
+  bool _allowPop = false;
+  bool _exitPromptOpen = false;
+
+  bool get _hasUnsavedChanges => widget.sourceWork != null && _initialArchiveSnapshot != _archiveSnapshot();
 
   @override
   void initState() {
     super.initState();
     if (widget.initialCards != null) _workspaceCards.addAll(widget.initialCards!);
     if (widget.initialConnections != null) _connections.addAll(widget.initialConnections!);
+    _initialArchiveSnapshot = _archiveSnapshot();
+  }
+
+  String _archiveSnapshot() {
+    final sourceWork = widget.sourceWork;
+    if (sourceWork == null) return '';
+    return widget.archiveStorage.encodeWorks([
+      ArchivedWork(
+        id: sourceWork.id,
+        name: sourceWork.name,
+        savedAt: sourceWork.savedAt,
+        isCompleted: sourceWork.isCompleted,
+        completedAt: sourceWork.completedAt,
+        cards: _workspaceCards.map((card) => WorkspaceCard(instanceId: card.instanceId, card: card.card, position: card.position, notes: card.notes)).toList(),
+        connections: List<CardConnection>.of(_connections),
+      ),
+    ]);
+  }
+
+  Future<void> _requestExit() async {
+    if (_allowPop || _exitPromptOpen) return;
+    if (!_hasUnsavedChanges) {
+      _allowPop = true;
+      if (mounted) Navigator.of(context).pop();
+      return;
+    }
+    _exitPromptOpen = true;
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF242627),
+        title: const Text('Unsaved changes'),
+        content: const Text('This archived work has unsaved changes.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Return to Editing')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Discard Changes')),
+        ],
+      ),
+    );
+    _exitPromptOpen = false;
+    if (!mounted || discard != true) return;
+    _allowPop = true;
+    Navigator.of(context).pop();
   }
 
   Future<void> _saveToArchive() async {
@@ -95,6 +143,7 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
       return;
     }
     if (!mounted) return;
+    _initialArchiveSnapshot = _archiveSnapshot();
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Archive updated')));
   }
 
@@ -181,41 +230,10 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
   }
 
   Future<void> _editNotes(WorkspaceCard workspaceCard) async {
-    final controller = TextEditingController(text: workspaceCard.notes);
     final notes = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF242627),
-        title: Text(workspaceCard.card.text, style: const TextStyle(color: Color(0xFFF0E6D2), fontSize: 18)),
-        content: SizedBox(
-          width: 420,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('REFERENCE NOTE', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 1.5)),
-              const SizedBox(height: 6),
-              Text(workspaceCard.card.referenceNote.isEmpty ? 'No reference note supplied.' : workspaceCard.card.referenceNote, style: const TextStyle(color: Color(0xFFAAA294), fontSize: 13, height: 1.35)),
-              const SizedBox(height: 18),
-              const Text('YOUR NOTES', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 1.5)),
-              const SizedBox(height: 6),
-              TextField(
-                controller: controller,
-                autofocus: true,
-                maxLines: 5,
-                style: const TextStyle(color: Color(0xFFF0E6D2)),
-                decoration: const InputDecoration(hintText: 'Add a note for this card', border: OutlineInputBorder()),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(context, controller.text), child: const Text('Save note')),
-        ],
-      ),
+      builder: (context) => _NotesDialog(workspaceCard: workspaceCard),
     );
-    controller.dispose();
     if (!mounted || notes == null) return;
     setState(() => workspaceCard.notes = notes);
   }
@@ -236,7 +254,12 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
   @override
   Widget build(BuildContext context) {
     final table = languageTables[_tableIndex];
-    return Focus(
+    return PopScope(
+      canPop: _allowPop,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) _requestExit();
+      },
+      child: Focus(
       autofocus: true,
       onKeyEvent: _handleKeyEvent,
       child: Scaffold(
@@ -244,7 +267,7 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              _RoomHeader(onBack: () => Navigator.of(context).pop(), onSave: _saveToArchive, onUpdate: widget.sourceWork == null ? null : _updateArchive, connectionMode: _connectionMode, onToggleConnections: _toggleConnectionMode),
+              _RoomHeader(onBack: _requestExit, onSave: _saveToArchive, onUpdate: widget.sourceWork == null ? null : _updateArchive, connectionMode: _connectionMode, onToggleConnections: _toggleConnectionMode),
               Expanded(
                 child: Row(
                   children: [
@@ -301,6 +324,61 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
           ),
         ),
       ),
+      ),
+    );
+  }
+}
+
+class _NotesDialog extends StatefulWidget {
+  const _NotesDialog({required this.workspaceCard});
+
+  final WorkspaceCard workspaceCard;
+
+  @override
+  State<_NotesDialog> createState() => _NotesDialogState();
+}
+
+class _NotesDialogState extends State<_NotesDialog> {
+  late final TextEditingController _controller = TextEditingController(text: widget.workspaceCard.notes);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final card = widget.workspaceCard.card;
+    return AlertDialog(
+      backgroundColor: const Color(0xFF242627),
+      title: Text(card.text, style: const TextStyle(color: Color(0xFFF0E6D2), fontSize: 18)),
+      content: SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('REFERENCE NOTE', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 1.5)),
+            const SizedBox(height: 6),
+            Text(card.referenceNote.isEmpty ? 'No reference note supplied.' : card.referenceNote, style: const TextStyle(color: Color(0xFFAAA294), fontSize: 13, height: 1.35)),
+            const SizedBox(height: 18),
+            const Text('YOUR NOTES', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 1.5)),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              maxLines: 5,
+              style: const TextStyle(color: Color(0xFFF0E6D2)),
+              decoration: const InputDecoration(hintText: 'Add a note for this card', border: OutlineInputBorder()),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        FilledButton(onPressed: () => Navigator.pop(context, _controller.text), child: const Text('Save note')),
+      ],
     );
   }
 }

@@ -32,7 +32,10 @@ class _CompletedWorksScreenState extends State<CompletedWorksScreen> {
     } on Object {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unable to load Completed Works')));
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Unable to load Completed Works'), action: SnackBarAction(label: 'Retry', onPressed: _loadWorks)));
+      });
       return;
     }
     if (!mounted) return;
