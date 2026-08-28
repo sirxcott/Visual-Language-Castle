@@ -112,6 +112,8 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
                       onLinkageSubtypeChanged: (value) => setState(() => _selectedLinkageSubtype = value),
                     ),
                     const SizedBox(height: 20),
+                    Text('${_filteredCards.length} results', key: const ValueKey('research-result-count'), style: const TextStyle(color: Color(0xFF80796C), fontSize: 12)),
+                    const SizedBox(height: 10),
                     _buildResults(),
                     ],
                   ),
@@ -135,7 +137,7 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
       key: const ValueKey('research-results'),
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 320, mainAxisExtent: 142, crossAxisSpacing: 14, mainAxisSpacing: 14),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 320, mainAxisExtent: 160, crossAxisSpacing: 14, mainAxisSpacing: 14),
       itemCount: cards.length,
       itemBuilder: (context, index) {
         final card = cards[index];
@@ -250,6 +252,10 @@ class _ResearchResultCard extends StatelessWidget {
               Text(card.tableName, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFA9A294), fontSize: 12)),
               const SizedBox(height: 6),
               Row(children: [Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)), const SizedBox(width: 7), Flexible(child: Text(card.category.label, overflow: TextOverflow.ellipsis, style: TextStyle(color: color, fontSize: 11))), const SizedBox(width: 8), const Icon(Icons.open_in_new_rounded, size: 15, color: Color(0xFF80796C))]),
+              if (card.tableName == 'Linkages') ...[
+                const SizedBox(height: 5),
+                Text(linkageSubtypeLabel(card), overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFC09A52), fontSize: 10)),
+              ],
             ],
           ),
         ),

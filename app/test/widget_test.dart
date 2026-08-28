@@ -557,6 +557,31 @@ void main() {
     expect(find.text('or rather'), findsNothing);
   });
 
+  testWidgets('Research results show Linkage subtype status and filtered count', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
+    expect(find.text('63 results'), findsOneWidget);
+    expect(find.text('Restatement Linkages'), findsNWidgets(6));
+    expect(find.text('Momentum Linkages'), findsNWidgets(4));
+    expect(find.text('Unclassified'), findsNWidgets(5));
+
+    await tester.tap(find.byKey(const ValueKey('research-linkage-subtype-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Momentum Linkages').last);
+    await tester.pumpAndSettle();
+    expect(find.text('4 results'), findsOneWidget);
+    expect(find.text('Restatement Linkages'), findsNothing);
+  });
+
+  testWidgets('Research hides Linkage Subtype control for unrelated tables', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
+    await tester.tap(find.byKey(const ValueKey('research-table-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Verbs').last);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('research-linkage-subtype-filter')), findsNothing);
+    expect(find.text('6 results'), findsOneWidget);
+  });
+
   testWidgets('Research details show the confirmed Linkage subtype', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
     await tester.ensureVisible(find.text('or should I say'));
@@ -564,7 +589,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('LINKAGE STATUS'), findsOneWidget);
-    expect(find.text('Restatement Linkages'), findsOneWidget);
+    expect(find.text('Restatement Linkages'), findsNWidgets(7));
   });
 
   test('taxonomy metadata remains excluded from archive serialization', () {
