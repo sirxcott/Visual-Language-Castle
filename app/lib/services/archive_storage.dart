@@ -15,11 +15,25 @@ class ArchiveStorage {
     final file = await _file;
     if (!await file.exists()) return [];
     try {
-      final decoded = jsonDecode(await file.readAsString()) as List<dynamic>;
-      return decoded.map((item) => _fromJson(item as Map<String, dynamic>)).toList();
+      return decodeWorks(await file.readAsString());
     } on Object {
       return [];
     }
+  }
+
+  List<ArchivedWork> decodeWorks(String contents) {
+    final decoded = jsonDecode(contents);
+    if (decoded is! List<dynamic>) return [];
+    final works = <ArchivedWork>[];
+    for (final item in decoded) {
+      if (item is! Map<String, dynamic>) continue;
+      try {
+        works.add(_fromJson(item));
+      } on Object {
+        continue;
+      }
+    }
+    return works;
   }
 
   Future<void> saveWorks(List<ArchivedWork> works) async {
@@ -86,7 +100,8 @@ class ArchiveStorage {
       cardInstancesBySourceId.putIfAbsent(workspaceCard.card.id, () => []).add(workspaceCard.instanceId);
     }
     final instanceIds = cards.map((card) => card.instanceId).toSet();
-    final connections = (json['connections'] as List<dynamic>? ?? [])
+    final rawConnections = json['connections'];
+    final connections = (rawConnections is List<dynamic> ? rawConnections : const <dynamic>[])
       .whereType<Map<String, dynamic>>()
       .where((connection) => connection['from'] is String && connection['to'] is String)
       .map((connection) {

@@ -5,6 +5,8 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -14,8 +16,89 @@ import 'package:visual_language_castle/models/archived_work.dart';
 import 'package:visual_language_castle/models/language_card.dart';
 import 'package:visual_language_castle/screens/archive_screen.dart';
 import 'package:visual_language_castle/screens/practice_room_screen.dart';
+import 'package:visual_language_castle/services/archive_storage.dart';
 
 void main() {
+  test('archive decoder preserves valid records around malformed records', () {
+    final contents = jsonEncode([
+      _archiveJson(id: 'valid-1', name: 'First'),
+      {'id': 'broken', 'name': 'Broken', 'savedAt': 'not-a-date', 'cards': []},
+      _archiveJson(id: 'valid-2', name: 'Second'),
+    ]);
+
+    final works = ArchiveStorage.instance.decodeWorks(contents);
+
+    expect(works.map((work) => work.id), ['valid-1', 'valid-2']);
+  });
+
+  test('archive decoder safely skips malformed connection entries', () {
+    final archive = _archiveJson(id: 'connections', name: 'Connections')..['connections'] = [
+      {'from': 'one', 'to': 'two'},
+      {'from': 42, 'to': 'two'},
+      'not-a-connection',
+    ];
+    archive['cards'] = [
+      _cardJson(sourceId: 'nom-1', instanceId: 'one'),
+      _cardJson(sourceId: 'verb-1', instanceId: 'two'),
+    ];
+
+    final works = ArchiveStorage.instance.decodeWorks(jsonEncode([archive]));
+
+    expect(works.single.connections, hasLength(1));
+    expect(works.single.connections.single.fromCardId, 'one');
+  });
+
+  test('archive decoder restores duplicate workspace instances and completion state', () {
+    final archive = _archiveJson(id: 'duplicate', name: 'Finished')
+      ..['isCompleted'] = true
+      ..['completedAt'] = '2026-08-27T12:00:00.000Z'
+      ..['cards'] = [
+        _cardJson(sourceId: 'nom-1', instanceId: 'copy-a'),
+        _cardJson(sourceId: 'nom-1', instanceId: 'copy-b'),
+      ]
+      ..['connections'] = [
+        {'from': 'copy-a', 'to': 'copy-b'},
+      ];
+
+    final work = ArchiveStorage.instance.decodeWorks(jsonEncode([archive])).single;
+
+    expect(work.cards.map((card) => card.instanceId), ['copy-a', 'copy-b']);
+    expect(work.cards[0].card.id, work.cards[1].card.id);
+    expect(work.connections.single.fromCardId, 'copy-a');
+    expect(work.connections.single.toCardId, 'copy-b');
+    expect(work.isCompleted, isTrue);
+    expect(work.completedAt, DateTime.parse('2026-08-27T12:00:00.000Z'));
+  });
+
+  test('legacy archives receive stable instances and migrate source connections', () {
+    final archive = _archiveJson(id: 'legacy', name: 'Legacy')
+      ..['cards'] = [
+        _cardJson(sourceId: 'nom-1'),
+        _cardJson(sourceId: 'nom-1'),
+      ]
+      ..['connections'] = [
+        {'from': 'nom-1', 'to': 'nom-1'},
+      ];
+
+    final work = ArchiveStorage.instance.decodeWorks(jsonEncode([archive])).single;
+
+    expect(work.cards.map((card) => card.instanceId), ['legacy-legacy-0', 'legacy-legacy-1']);
+    expect(work.connections.single.fromCardId, 'legacy-legacy-0');
+    expect(work.connections.single.toCardId, 'legacy-legacy-0');
+    expect(work.isCompleted, isFalse);
+    expect(work.completedAt, isNull);
+  });
+
+  testWidgets('archived cards restore into the Practice Room', (WidgetTester tester) async {
+    final source = languageTables.first.cards.first;
+    final restored = WorkspaceCard(instanceId: 'restored-instance', card: source, position: Offset.zero, notes: 'kept');
+
+    await tester.pumpWidget(MaterialApp(home: PracticeRoomScreen(initialCards: [restored])));
+
+    expect(find.text(source.text), findsNWidgets(2));
+    expect(find.byTooltip('Remove from wall'), findsOneWidget);
+  });
+
   test('workspace copies have independent instance identities', () {
     final sourceCard = languageTables.first.cards.first;
     final first = WorkspaceCard(card: sourceCard, position: Offset.zero);
@@ -107,4 +190,29 @@ void main() {
 
     expect(find.text('Archive'), findsOneWidget);
   });
+}
+
+Map<String, dynamic> _archiveJson({required String id, required String name}) {
+  return {
+    'id': id,
+    'name': name,
+    'savedAt': '2026-08-27T12:00:00.000Z',
+    'cards': [_cardJson(sourceId: 'nom-1', instanceId: 'one')],
+    'connections': <Map<String, String>>[],
+  };
+}
+
+Map<String, dynamic> _cardJson({required String sourceId, String? instanceId}) {
+  final card = <String, dynamic>{
+    'id': sourceId,
+    'text': 'the room',
+    'category': 'orange',
+    'tableName': 'Nominals',
+    'referenceNote': '',
+    'notes': 'note',
+    'x': 12,
+    'y': 24,
+  };
+  if (instanceId != null) card['instanceId'] = instanceId;
+  return card;
 }
