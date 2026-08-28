@@ -69,41 +69,32 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
       ),
     );
     if (!mounted || confirmed != true) return;
-    work.isCompleted = completing;
-    work.completedAt = completing ? DateTime.now() : null;
+    final proposed = _storage.copyWork(work, isCompleted: completing, completedAt: completing ? DateTime.now() : null, replaceCompletedAt: true);
+    final proposedWorks = _storage.replaceWork(_works, proposed);
     try {
-      await _storage.saveWorks(_works);
+      await _storage.saveWorks(proposedWorks);
     } on Object {
       _showStorageError('Unable to update Archive');
       return;
     }
-    if (mounted) setState(() {});
+    if (mounted) setState(() => _works = proposedWorks);
   }
 
   Future<void> _renameWork(ArchivedWork work) async {
-    final controller = TextEditingController(text: work.name);
     final name = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF242627),
-        title: const Text('Rename archived work'),
-        content: TextField(controller: controller, autofocus: true, decoration: const InputDecoration(labelText: 'Work name'), onSubmitted: (value) => Navigator.pop(context, value.trim())),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('Rename')),
-        ],
-      ),
+      builder: (context) => _RenameWorkDialog(initialName: work.name),
     );
-    controller.dispose();
     if (!mounted || name == null || name.isEmpty) return;
-    work.name = name;
+    final proposed = _storage.copyWork(work, name: name);
+    final proposedWorks = _storage.replaceWork(_works, proposed);
     try {
-      await _storage.saveWorks(_works);
+      await _storage.saveWorks(proposedWorks);
     } on Object {
       _showStorageError('Unable to rename archived work');
       return;
     }
-    if (mounted) setState(() {});
+    if (mounted) setState(() => _works = proposedWorks);
   }
 
   Future<void> _deleteWork(ArchivedWork work) async {
@@ -120,14 +111,14 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
       ),
     );
     if (!mounted || confirmed != true) return;
-    _works.removeWhere((item) => item.id == work.id);
+    final proposedWorks = List<ArchivedWork>.of(_works)..removeWhere((item) => item.id == work.id);
     try {
-      await _storage.saveWorks(_works);
+      await _storage.saveWorks(proposedWorks);
     } on Object {
       _showStorageError('Unable to delete archived work');
       return;
     }
-    if (mounted) setState(() {});
+    if (mounted) setState(() => _works = proposedWorks);
   }
 
   String _savedDate(DateTime date) {
@@ -203,6 +194,40 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _RenameWorkDialog extends StatefulWidget {
+  const _RenameWorkDialog({required this.initialName});
+
+  final String initialName;
+
+  @override
+  State<_RenameWorkDialog> createState() => _RenameWorkDialogState();
+}
+
+class _RenameWorkDialogState extends State<_RenameWorkDialog> {
+  late final TextEditingController _controller = TextEditingController(text: widget.initialName);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() => Navigator.pop(context, _controller.text.trim());
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: const Color(0xFF242627),
+      title: const Text('Rename archived work'),
+      content: TextField(controller: _controller, autofocus: true, decoration: const InputDecoration(labelText: 'Work name'), onSubmitted: (_) => _submit()),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        FilledButton(onPressed: _submit, child: const Text('Rename')),
+      ],
     );
   }
 }

@@ -64,6 +64,66 @@ void main() {
     expect(works.map((work) => work.id), ['second']);
   });
 
+  testWidgets('Archive rename is transactional on success and failure', (WidgetTester tester) async {
+    final work = _testWork(id: 'rename', name: 'Original');
+    final storage = ArchiveStorage.inMemory([work], null, StateError('save failed'));
+    await tester.pumpWidget(MaterialApp(home: ArchiveScreen(storage: storage)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Rename Original'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Failed Rename');
+    await tester.tap(find.text('Rename'));
+    await tester.pumpAndSettle();
+    expect(find.text('Original'), findsOneWidget);
+    storage.clearSaveError();
+    await tester.tap(find.byTooltip('Rename Original'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Renamed');
+    await tester.tap(find.text('Rename'));
+    await tester.pumpAndSettle();
+    expect(find.text('Renamed'), findsOneWidget);
+  });
+
+  testWidgets('Archive completion is transactional on success and failure', (WidgetTester tester) async {
+    final work = _testWork(id: 'completion', name: 'Completion');
+    final storage = ArchiveStorage.inMemory([work], null, StateError('save failed'));
+    await tester.pumpWidget(MaterialApp(home: ArchiveScreen(storage: storage)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Mark "Completion" complete'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Complete'));
+    await tester.pumpAndSettle();
+    expect(find.text('Completed'), findsNothing);
+    expect((await storage.loadWorks()).single.isCompleted, isFalse);
+    storage.clearSaveError();
+    await tester.tap(find.byTooltip('Mark "Completion" complete'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Complete'));
+    await tester.pumpAndSettle();
+    expect(find.text('Completed'), findsOneWidget);
+  });
+
+  testWidgets('Archive deletion is transactional on success and failure', (WidgetTester tester) async {
+    final first = _testWork(id: 'delete-first', name: 'First');
+    final second = _testWork(id: 'delete-second', name: 'Second');
+    final storage = ArchiveStorage.inMemory([first, second], null, StateError('save failed'));
+    await tester.pumpWidget(MaterialApp(home: ArchiveScreen(storage: storage)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Delete First'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+    expect(find.text('First'), findsOneWidget);
+    expect((await storage.loadWorks()).map((item) => item.id), ['delete-first', 'delete-second']);
+    storage.clearSaveError();
+    await tester.tap(find.byTooltip('Delete First'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+    expect(find.text('First'), findsNothing);
+    expect(find.text('Second'), findsOneWidget);
+  });
+
   testWidgets('Practice Room updates an archive in place and Save creates a copy', (WidgetTester tester) async {
     final storage = ArchiveStorage.inMemory();
     final original = _testWork(id: 'original', name: 'Original', isCompleted: true);
@@ -91,6 +151,21 @@ void main() {
     expect(works.map((work) => work.id), contains('original'));
     expect(works.where((work) => work.name == 'Copy'), hasLength(1));
     expect(works.firstWhere((work) => work.name == 'Copy').id, isNot('original'));
+  });
+
+  testWidgets('Update Archive preserves the prior record when saving fails', (WidgetTester tester) async {
+    final original = _testWork(id: 'update-failure', name: 'Original');
+    final storage = ArchiveStorage.inMemory([original], null, StateError('save failed'));
+    await tester.pumpWidget(MaterialApp(home: PracticeRoomScreen(initialCards: original.cards, initialConnections: original.connections, sourceWork: original, storage: storage)));
+    await tester.tap(find.byTooltip('Update Archive'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Update'));
+    await tester.pumpAndSettle();
+    final restored = (await storage.loadWorks()).single;
+    expect(restored.id, original.id);
+    expect(restored.name, original.name);
+    expect(restored.cards.single.instanceId, original.cards.single.instanceId);
+    expect(restored.cards.single.notes, original.cards.single.notes);
   });
 
   testWidgets('Archive shows feedback when loading fails', (WidgetTester tester) async {

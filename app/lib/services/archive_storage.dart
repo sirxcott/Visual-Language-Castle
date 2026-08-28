@@ -7,17 +7,18 @@ import '../models/archived_work.dart';
 import '../models/language_card.dart';
 
 class ArchiveStorage {
-  ArchiveStorage._({this._fileOverride, this._memoryWorks, this._loadError});
+  ArchiveStorage._({this._fileOverride, this._memoryWorks, this._loadError, this._saveError});
 
-  ArchiveStorage.forTesting(File file, {Object? loadError}) : this._(fileOverride: file, loadError: loadError);
+  ArchiveStorage.forTesting(File file, {Object? loadError, Object? saveError}) : this._(fileOverride: file, loadError: loadError, saveError: saveError);
 
-  ArchiveStorage.inMemory([List<ArchivedWork> works = const [], Object? loadError]) : this._(memoryWorks: List<ArchivedWork>.of(works), loadError: loadError);
+  ArchiveStorage.inMemory([List<ArchivedWork> works = const [], Object? loadError, Object? saveError]) : this._(memoryWorks: List<ArchivedWork>.of(works), loadError: loadError, saveError: saveError);
 
   static final ArchiveStorage instance = ArchiveStorage._();
 
   final File? _fileOverride;
   final List<ArchivedWork>? _memoryWorks;
   Object? _loadError;
+  Object? _saveError;
 
   Future<List<ArchivedWork>> loadWorks() async {
     final loadError = _loadError;
@@ -39,6 +40,10 @@ class ArchiveStorage {
     _loadError = null;
   }
 
+  void clearSaveError() {
+    _saveError = null;
+  }
+
   List<ArchivedWork> decodeWorks(String contents) {
     final decoded = jsonDecode(contents);
     if (decoded is! List<dynamic>) return [];
@@ -55,6 +60,8 @@ class ArchiveStorage {
   }
 
   Future<void> saveWorks(List<ArchivedWork> works) async {
+    final saveError = _saveError;
+    if (saveError != null) throw saveError;
     if (_memoryWorks != null) {
       _memoryWorks
         ..clear()
@@ -75,6 +82,18 @@ class ArchiveStorage {
       savedAt: DateTime.now(),
       cards: cards.map((card) => WorkspaceCard(instanceId: card.instanceId, card: card.card, position: card.position, notes: card.notes)).toList(),
       connections: List<CardConnection>.of(connections),
+    );
+  }
+
+  ArchivedWork copyWork(ArchivedWork work, {String? name, bool? isCompleted, DateTime? completedAt, bool replaceCompletedAt = false}) {
+    return ArchivedWork(
+      id: work.id,
+      name: name ?? work.name,
+      savedAt: work.savedAt,
+      isCompleted: isCompleted ?? work.isCompleted,
+      completedAt: replaceCompletedAt ? completedAt : work.completedAt,
+      cards: work.cards.map((card) => WorkspaceCard(instanceId: card.instanceId, card: card.card, position: card.position, notes: card.notes)).toList(),
+      connections: List<CardConnection>.of(work.connections),
     );
   }
 
