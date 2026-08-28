@@ -84,8 +84,8 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
     Navigator.of(context).pop();
   }
 
-  Future<void> _saveToArchive() async {
-    final name = await showDialog<String>(
+  Future<void> _saveToArchive({String? retryName}) async {
+    final name = retryName ?? await showDialog<String>(
       context: context,
       builder: (context) => const _ArchiveNameDialog(),
     );
@@ -96,17 +96,19 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
       works.insert(0, widget.archiveStorage.createCopy(name: name, cards: _workspaceCards, connections: _connections));
       await widget.archiveStorage.saveWorks(works);
     } on Object {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unable to save to Archive')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Unable to save to Archive'), action: SnackBarAction(label: 'Retry', onPressed: () => _saveToArchive(retryName: name))));
+      }
       return;
     }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved to Archive')));
   }
 
-  Future<void> _updateArchive() async {
+  Future<void> _updateArchive({bool retry = false}) async {
     final sourceWork = widget.sourceWork;
     if (sourceWork == null) return;
-    final confirmed = await showDialog<bool>(
+    final confirmed = retry ? true : await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF242627),
@@ -123,7 +125,7 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
     try {
       works = await widget.archiveStorage.loadWorks();
     } on Object {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unable to load Archive for update')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Unable to load Archive for update'), action: SnackBarAction(label: 'Retry', onPressed: () => _updateArchive(retry: true))));
       return;
     }
     final updated = ArchivedWork(
@@ -139,7 +141,7 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
     try {
       await widget.archiveStorage.saveWorks(widget.archiveStorage.replaceWork(works, updated));
     } on Object {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unable to update Archive')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Unable to update Archive'), action: SnackBarAction(label: 'Retry', onPressed: () => _updateArchive(retry: true))));
       return;
     }
     if (!mounted) return;

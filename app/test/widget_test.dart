@@ -168,6 +168,47 @@ void main() {
     expect(restored.cards.single.notes, original.cards.single.notes);
   });
 
+  testWidgets('Save to Archive retries without duplicating the copy', (WidgetTester tester) async {
+    final card = WorkspaceCard(instanceId: 'save-instance', card: languageTables.first.cards.first, position: const Offset(25, 35), notes: 'wall note');
+    final storage = ArchiveStorage.inMemory(const [], null, StateError('save failed'));
+    await tester.pumpWidget(MaterialApp(home: PracticeRoomScreen(initialCards: [card], initialConnections: const [], storage: storage)));
+    await tester.tap(find.byTooltip('Save to Archive'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Recovered Copy');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(find.text('Retry'), findsOneWidget);
+    storage.clearSaveError();
+    tester.widget<SnackBarAction>(find.byType(SnackBarAction)).onPressed();
+    await tester.pumpAndSettle();
+    final works = await storage.loadWorks();
+    expect(works, hasLength(1));
+    expect(works.single.name, 'Recovered Copy');
+    expect(works.single.cards.single.instanceId, 'save-instance');
+    expect(works.single.cards.single.notes, 'wall note');
+    expect(works.single.cards.single.position, const Offset(25, 35));
+  });
+
+  testWidgets('Update Archive retries against authoritative storage without duplication', (WidgetTester tester) async {
+    final original = _testWork(id: 'retry-update', name: 'Original', isCompleted: true);
+    final storage = ArchiveStorage.inMemory([original], null, StateError('save failed'));
+    await tester.pumpWidget(MaterialApp(home: PracticeRoomScreen(initialCards: original.cards, initialConnections: original.connections, sourceWork: original, storage: storage)));
+    await tester.tap(find.byTooltip('Update Archive'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Update'));
+    await tester.pumpAndSettle();
+    expect(find.text('Retry'), findsOneWidget);
+    storage.clearSaveError();
+    tester.widget<SnackBarAction>(find.byType(SnackBarAction)).onPressed();
+    await tester.pumpAndSettle();
+    final works = await storage.loadWorks();
+    expect(works, hasLength(1));
+    expect(works.single.id, 'retry-update');
+    expect(works.single.isCompleted, isTrue);
+    expect(works.single.completedAt, original.completedAt);
+    expect(works.single.cards.single.instanceId, original.cards.single.instanceId);
+  });
+
   testWidgets('Archive shows feedback when loading fails', (WidgetTester tester) async {
     final storage = ArchiveStorage.forTesting(File('unused-archive.json'), loadError: StateError('test load failure'));
 
