@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/language_tables.dart';
+import '../data/language_taxonomy.dart';
 import '../models/language_card.dart';
 
 class ResearchLaboratoryScreen extends StatefulWidget {
@@ -56,6 +57,10 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
             _DetailLabel(label: 'TABLE', value: card.tableName),
             const SizedBox(height: 16),
             _DetailLabel(label: 'CATEGORY', value: card.category.label, color: card.category.color),
+            if (card.tableName == 'Linkages') ...[
+              const SizedBox(height: 16),
+              _DetailLabel(label: 'LINKAGE STATUS', value: linkageSubtypeLabel(card), color: const Color(0xFFC09A52)),
+            ],
             const SizedBox(height: 16),
             _DetailLabel(label: 'REFERENCE NOTE', value: card.referenceNote.isEmpty ? 'No reference note supplied.' : card.referenceNote),
           ],

@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:visual_language_castle/data/language_tables.dart';
+import 'package:visual_language_castle/data/language_taxonomy.dart';
 import 'package:visual_language_castle/main.dart';
 import 'package:visual_language_castle/models/archived_work.dart';
 import 'package:visual_language_castle/models/language_card.dart';
@@ -498,6 +499,29 @@ void main() {
     expect(find.text('notice'), findsNWidgets(2));
     expect(find.text('allow'), findsNothing);
     expect(find.text('the room'), findsNothing);
+  });
+
+  test('confirmed linkage examples classify without changing unmatched corpus cards', () {
+    final restatement = LanguageCard(id: 'test-restatement', text: 'in other words', category: CardCategory.green, tableName: 'Linkages');
+    final momentum = LanguageCard(id: 'test-momentum', text: 'obviously', category: CardCategory.green, tableName: 'Linkages');
+
+    expect(linkageSubtypeFor(restatement), LinkageSubtype.restatement);
+    expect(linkageSubtypeFor(momentum), LinkageSubtype.momentum);
+    expect(languageTables[2].cards.every((card) => linkageSubtypeFor(card) == null), isTrue);
+    expect(linkageSubtypeLabel(languageTables[2].cards.first), 'Unclassified');
+    expect(languageTables.first.name, 'Nominals');
+    expect('Nominals are the abbreviated app term for hypnotic nominalizations.', contains('Nominals'));
+  });
+
+  test('taxonomy metadata is excluded from archive serialization', () {
+    final card = LanguageCard(id: 'test-restatement', text: 'in other words', category: CardCategory.green, tableName: 'Linkages');
+    final work = ArchivedWork(id: 'taxonomy', name: 'Taxonomy', savedAt: DateTime(2026, 8, 28), cards: [WorkspaceCard(instanceId: 'taxonomy-card', card: card, position: Offset.zero)]);
+    final encoded = ArchiveStorage.instance.encodeWorks([work]);
+    final decoded = jsonDecode(encoded) as List<dynamic>;
+    final serializedCard = (decoded.single as Map<String, dynamic>)['cards'] as List<dynamic>;
+
+    expect(serializedCard.single, isNot(contains('subtype')));
+    expect(linkageSubtypeLabel(card), 'Restatement Linkages');
   });
 
   test('workspace copies have independent instance identities', () {
