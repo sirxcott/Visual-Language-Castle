@@ -501,13 +501,88 @@ void main() {
     expect(find.text('the room'), findsNothing);
   });
 
+  test('expanded Linkages corpus contains only the confirmed subtype examples', () {
+    final linkages = languageTables.firstWhere((table) => table.name == 'Linkages').cards;
+    final restatement = linkages.where((card) => linkageSubtypeFor(card) == LinkageSubtype.restatement).toList();
+    final momentum = linkages.where((card) => linkageSubtypeFor(card) == LinkageSubtype.momentum).toList();
+    final unclassified = linkages.where((card) => linkageSubtypeFor(card) == null).toList();
+
+    expect(linkages, hasLength(15));
+    expect(restatement.map((card) => card.text), [
+      'or should I say',
+      'or you could say',
+      'in other words',
+      'which is to say',
+      'to put it another way',
+      'or rather',
+    ]);
+    expect(momentum.map((card) => card.text), ["and if that's the case", 'and as a result', 'of course', 'obviously']);
+    expect(unclassified.map((card) => card.text), ['and', 'because', 'as', 'while', 'which means']);
+    expect(linkages.map((card) => card.id).toSet(), hasLength(15));
+  });
+
+  testWidgets('Research Laboratory filters by Linkage Subtype', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
+
+    await tester.tap(find.byKey(const ValueKey('research-linkage-subtype-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Restatement Linkages').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('or should I say'), findsOneWidget);
+    expect(find.text('and if that\'s the case'), findsNothing);
+    expect(find.text('which means'), findsNothing);
+  });
+
+  testWidgets('Linkage Subtype combines with search, table, and category filters', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
+
+    await tester.tap(find.byKey(const ValueKey('research-table-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Linkages').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('research-category-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Linkage').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('research-linkage-subtype-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Momentum Linkages').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'obvious');
+    await tester.pumpAndSettle();
+
+    expect(find.text('obviously'), findsOneWidget);
+    expect(find.text('of course'), findsNothing);
+    expect(find.text('or rather'), findsNothing);
+  });
+
+  testWidgets('Research details show the confirmed Linkage subtype', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
+    await tester.ensureVisible(find.text('or should I say'));
+    await tester.tap(find.text('or should I say'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('LINKAGE STATUS'), findsOneWidget);
+    expect(find.text('Restatement Linkages'), findsOneWidget);
+  });
+
+  test('taxonomy metadata remains excluded from archive serialization', () {
+    final card = languageTables.firstWhere((table) => table.name == 'Linkages').cards[5];
+    final work = ArchivedWork(id: 'linkage-taxonomy', name: 'Linkage Taxonomy', savedAt: DateTime(2026, 8, 28), cards: [WorkspaceCard(instanceId: 'linkage-instance', card: card, position: Offset.zero)]);
+    final encodedCard = ((jsonDecode(ArchiveStorage.instance.encodeWorks([work])) as List<dynamic>).single as Map<String, dynamic>)['cards'] as List<dynamic>;
+
+    expect(encodedCard.single, isNot(contains('subtype')));
+    expect(linkageSubtypeFor(card), LinkageSubtype.restatement);
+  });
+
   test('confirmed linkage examples classify without changing unmatched corpus cards', () {
     final restatement = LanguageCard(id: 'test-restatement', text: 'in other words', category: CardCategory.green, tableName: 'Linkages');
     final momentum = LanguageCard(id: 'test-momentum', text: 'obviously', category: CardCategory.green, tableName: 'Linkages');
 
     expect(linkageSubtypeFor(restatement), LinkageSubtype.restatement);
     expect(linkageSubtypeFor(momentum), LinkageSubtype.momentum);
-    expect(languageTables[2].cards.every((card) => linkageSubtypeFor(card) == null), isTrue);
+    expect(languageTables[2].cards.take(5).every((card) => linkageSubtypeFor(card) == null), isTrue);
     expect(linkageSubtypeLabel(languageTables[2].cards.first), 'Unclassified');
     expect(languageTables.first.name, 'Nominals');
     expect('Nominals are the abbreviated app term for hypnotic nominalizations.', contains('Nominals'));

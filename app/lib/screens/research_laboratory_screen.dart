@@ -15,6 +15,7 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedTable = 'All Tables';
   String _selectedCategory = 'All Categories';
+  String _selectedLinkageSubtype = 'All Linkage Subtypes';
 
   List<LanguageCard> get _allCards => [for (final table in languageTables) ...table.cards];
 
@@ -23,8 +24,9 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
     return _allCards.where((card) {
       final matchesTable = _selectedTable == 'All Tables' || card.tableName == _selectedTable;
       final matchesCategory = _selectedCategory == 'All Categories' || card.category.label == _selectedCategory;
+      final matchesSubtype = _selectedLinkageSubtype == 'All Linkage Subtypes' || (card.tableName == 'Linkages' && linkageSubtypeLabel(card) == _selectedLinkageSubtype);
       final matchesSearch = query.isEmpty || card.text.toLowerCase().contains(query) || card.tableName.toLowerCase().contains(query);
-      return matchesTable && matchesCategory && matchesSearch;
+      return matchesTable && matchesCategory && matchesSubtype && matchesSearch;
     }).toList();
   }
 
@@ -106,6 +108,8 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
                       onTableChanged: (value) => setState(() => _selectedTable = value),
                       selectedCategory: _selectedCategory,
                       onCategoryChanged: (value) => setState(() => _selectedCategory = value),
+                      selectedLinkageSubtype: _selectedLinkageSubtype,
+                      onLinkageSubtypeChanged: (value) => setState(() => _selectedLinkageSubtype = value),
                     ),
                     const SizedBox(height: 20),
                     _buildResults(),
@@ -142,13 +146,15 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
 }
 
 class _ResearchControls extends StatelessWidget {
-  const _ResearchControls({required this.searchController, required this.selectedTable, required this.onTableChanged, required this.selectedCategory, required this.onCategoryChanged});
+  const _ResearchControls({required this.searchController, required this.selectedTable, required this.onTableChanged, required this.selectedCategory, required this.onCategoryChanged, required this.selectedLinkageSubtype, required this.onLinkageSubtypeChanged});
 
   final TextEditingController searchController;
   final String selectedTable;
   final ValueChanged<String> onTableChanged;
   final String selectedCategory;
   final ValueChanged<String> onCategoryChanged;
+  final String selectedLinkageSubtype;
+  final ValueChanged<String> onLinkageSubtypeChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -187,10 +193,31 @@ class _ResearchControls extends StatelessWidget {
             if (value != null) onCategoryChanged(value);
           },
         );
+        final linkageSubtypeFilter = DropdownButtonFormField<String>(
+          initialValue: selectedLinkageSubtype,
+          isExpanded: true,
+          key: const ValueKey('research-linkage-subtype-filter'),
+          decoration: const InputDecoration(labelText: 'Linkage Subtype', border: OutlineInputBorder()),
+          items: ['All Linkage Subtypes', 'Restatement Linkages', 'Momentum Linkages', 'Unclassified']
+              .map((subtype) => DropdownMenuItem(value: subtype, child: Text(subtype, maxLines: 1, overflow: TextOverflow.ellipsis)))
+              .toList(),
+          onChanged: (value) {
+            if (value != null) onLinkageSubtypeChanged(value);
+          },
+        );
+        final showLinkageSubtype = selectedTable == 'All Tables' || selectedTable == 'Linkages';
         if (constraints.maxWidth < 1100) {
-          return Column(children: [search, const SizedBox(height: 12), filter, const SizedBox(height: 12), categoryFilter]);
+          return Column(children: [search, const SizedBox(height: 12), filter, const SizedBox(height: 12), categoryFilter, if (showLinkageSubtype) ...[const SizedBox(height: 12), linkageSubtypeFilter]]);
         }
-        return Row(children: [Expanded(child: search), const SizedBox(width: 14), SizedBox(width: 220, child: filter), const SizedBox(width: 14), SizedBox(width: 220, child: categoryFilter)]);
+        return Column(
+          children: [
+            Row(children: [Expanded(child: search), const SizedBox(width: 14), SizedBox(width: 220, child: filter), const SizedBox(width: 14), SizedBox(width: 220, child: categoryFilter)]),
+            if (showLinkageSubtype) ...[
+              const SizedBox(height: 12),
+              Align(alignment: Alignment.centerLeft, child: SizedBox(width: 220, child: linkageSubtypeFilter)),
+            ],
+          ],
+        );
       },
     );
   }

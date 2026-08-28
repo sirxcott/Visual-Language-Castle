@@ -17,7 +17,7 @@ extension LinkageSubtypeDetails on LinkageSubtype {
 }
 
 const _restatementLinkages = {
-  'or should I say',
+  'or should i say',
   'or you could say',
   'in other words',
   'which is to say',
