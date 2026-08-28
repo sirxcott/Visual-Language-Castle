@@ -1,21 +1,23 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 
 import '../models/archived_work.dart';
 import '../models/language_card.dart';
+import 'archive_storage_platform.dart'
+  if (dart.library.io) 'archive_storage_platform_io.dart'
+  if (dart.library.js_interop) 'archive_storage_platform_web.dart' as platform;
 
 class ArchiveStorage {
   ArchiveStorage._({this._fileOverride, this._memoryWorks, this._loadError, this._saveError});
 
-  ArchiveStorage.forTesting(File file, {Object? loadError, Object? saveError}) : this._(fileOverride: file, loadError: loadError, saveError: saveError);
+  ArchiveStorage.forTesting(Object file, {Object? loadError, Object? saveError}) : this._(fileOverride: file, loadError: loadError, saveError: saveError);
 
   ArchiveStorage.inMemory([List<ArchivedWork> works = const [], Object? loadError, Object? saveError]) : this._(memoryWorks: List<ArchivedWork>.of(works), loadError: loadError, saveError: saveError);
 
   static final ArchiveStorage instance = ArchiveStorage._();
 
-  final File? _fileOverride;
+  final Object? _fileOverride;
   final List<ArchivedWork>? _memoryWorks;
   Object? _loadError;
   Object? _saveError;
@@ -24,9 +26,8 @@ class ArchiveStorage {
     final loadError = _loadError;
     if (loadError != null) throw loadError;
     if (_memoryWorks != null) return List<ArchivedWork>.of(_memoryWorks);
-    final file = await _file;
-    if (!await file.exists()) return [];
-    final contents = await file.readAsString();
+    final contents = await platform.readArchive(_fileOverride);
+    if (contents == null) return [];
     try {
       return decodeWorks(contents);
     } on FormatException {
@@ -68,9 +69,7 @@ class ArchiveStorage {
         ..addAll(works);
       return;
     }
-    final file = await _file;
-    await file.parent.create(recursive: true);
-    await file.writeAsString(encodeWorks(works));
+    await platform.writeArchive(_fileOverride, encodeWorks(works));
   }
 
   String encodeWorks(List<ArchivedWork> works) => jsonEncode(works.map(_toJson).toList());
@@ -102,12 +101,6 @@ class ArchiveStorage {
     final index = replacement.indexWhere((work) => work.id == updated.id);
     if (index >= 0) replacement[index] = updated;
     return replacement;
-  }
-
-  Future<File> get _file async {
-    if (_fileOverride != null) return _fileOverride;
-    final root = Platform.environment['APPDATA'] ?? Platform.environment['HOME'] ?? Directory.systemTemp.path;
-    return File('$root${Platform.pathSeparator}VisualLanguageCastle${Platform.pathSeparator}archives.json');
   }
 
   Map<String, dynamic> _toJson(ArchivedWork work) {
