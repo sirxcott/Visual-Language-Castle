@@ -52,6 +52,14 @@ class TableBrowser extends StatelessWidget {
               ],
             ),
           ),
+          if (_tableGuidance.containsKey(table.name))
+            Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: IconButton(tooltip: 'Open table guidance', onPressed: () => _showTableGuidance(context), icon: const Icon(Icons.info_outline_rounded, size: 18)),
+              ),
+            ),
           const Divider(color: Color(0xFF342F27), height: 20),
           Expanded(
             child: ListView.separated(
@@ -69,4 +77,39 @@ class TableBrowser extends StatelessWidget {
       ),
     );
   }
+
+  void _showTableGuidance(BuildContext context) {
+    final guidance = _tableGuidance[table.name];
+    if (guidance == null) return;
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF242627),
+        title: Text(table.name, style: const TextStyle(color: Color(0xFFF0E6D2), fontSize: 20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: guidance,
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+      ),
+    );
+  }
+
+static const _tableGuidance = <String, List<Widget>>{
+  'Nominals': [
+    Text('Nominals are the abbreviated app term for hypnotic nominalizations.', style: TextStyle(color: Color(0xFFE0D3B8), fontSize: 14, height: 1.4)),
+  ],
+  'Linkages': [
+    Text('Linkages are spoken transition structures that maintain and shape hypnotic/conversational momentum.', style: TextStyle(color: Color(0xFFE0D3B8), fontSize: 14, height: 1.4)),
+    SizedBox(height: 16),
+    Text('RESTATEMENT LINKAGES', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 1.5)),
+    SizedBox(height: 5),
+    Text('Linkages used to restate or reinforce a suggestion in a different way.', style: TextStyle(color: Color(0xFFE0D3B8), fontSize: 14, height: 1.4)),
+    SizedBox(height: 14),
+    Text('MOMENTUM LINKAGES', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 1.5)),
+    SizedBox(height: 5),
+    Text('Linkages used to maintain verbal flow and give the speaker processing time without breaking delivery.', style: TextStyle(color: Color(0xFFE0D3B8), fontSize: 14, height: 1.4)),
+  ],
+};
 }

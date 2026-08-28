@@ -585,6 +585,26 @@ void main() {
     expect(languageTables.last.cards.map((card) => card.text), contains('form-uh-trance'));
   });
 
+  testWidgets('table guidance explains Nominals and Linkages terminology', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: PracticeRoomScreen()));
+
+    await tester.tap(find.byTooltip('Open table guidance'));
+    await tester.pumpAndSettle();
+    expect(find.text('Nominals are the abbreviated app term for hypnotic nominalizations.'), findsOneWidget);
+    await tester.tap(find.text('Close'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Next table (D)'));
+    await tester.tap(find.byTooltip('Next table (D)'));
+    await tester.pump();
+    await tester.tap(find.byTooltip('Open table guidance'));
+    await tester.pumpAndSettle();
+    expect(find.text('Linkages are spoken transition structures that maintain and shape hypnotic/conversational momentum.'), findsOneWidget);
+    expect(find.text('RESTATEMENT LINKAGES'), findsOneWidget);
+    expect(find.text('MOMENTUM LINKAGES'), findsOneWidget);
+    await tester.tap(find.text('Close'));
+  });
+
   testWidgets('archive screen renders as a functional destination', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: ArchiveScreen()));
     await tester.pump(const Duration(milliseconds: 100));
