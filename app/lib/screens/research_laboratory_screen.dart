@@ -13,6 +13,7 @@ class ResearchLaboratoryScreen extends StatefulWidget {
 
 class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   String _selectedTable = 'All Tables';
   String _selectedCategory = 'All Categories';
   String _selectedLinkageSubtype = 'All Linkage Subtypes';
@@ -41,10 +42,28 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
     _searchController
       ..removeListener(_updateResults)
       ..dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
   void _updateResults() => setState(() {});
+
+  void _changeTable(String table) {
+    setState(() {
+      _selectedTable = table;
+      if (table != 'All Tables' && table != 'Linkages') _selectedLinkageSubtype = 'All Linkage Subtypes';
+    });
+  }
+
+  void _resetFilters() {
+    setState(() {
+      _searchController.clear();
+      _selectedTable = 'All Tables';
+      _selectedCategory = 'All Categories';
+      _selectedLinkageSubtype = 'All Linkage Subtypes';
+    });
+    _searchFocusNode.requestFocus();
+  }
 
   void _showDetails(LanguageCard card) {
     showDialog<void>(
@@ -105,11 +124,13 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
                     _ResearchControls(
                       searchController: _searchController,
                       selectedTable: _selectedTable,
-                      onTableChanged: (value) => setState(() => _selectedTable = value),
+                      onTableChanged: _changeTable,
                       selectedCategory: _selectedCategory,
                       onCategoryChanged: (value) => setState(() => _selectedCategory = value),
                       selectedLinkageSubtype: _selectedLinkageSubtype,
                       onLinkageSubtypeChanged: (value) => setState(() => _selectedLinkageSubtype = value),
+                      onReset: _resetFilters,
+                      searchFocusNode: _searchFocusNode,
                     ),
                     const SizedBox(height: 20),
                     Text('${_filteredCards.length} results', key: const ValueKey('research-result-count'), style: const TextStyle(color: Color(0xFF80796C), fontSize: 12)),
@@ -148,7 +169,7 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
 }
 
 class _ResearchControls extends StatelessWidget {
-  const _ResearchControls({required this.searchController, required this.selectedTable, required this.onTableChanged, required this.selectedCategory, required this.onCategoryChanged, required this.selectedLinkageSubtype, required this.onLinkageSubtypeChanged});
+  const _ResearchControls({required this.searchController, required this.selectedTable, required this.onTableChanged, required this.selectedCategory, required this.onCategoryChanged, required this.selectedLinkageSubtype, required this.onLinkageSubtypeChanged, required this.onReset, required this.searchFocusNode});
 
   final TextEditingController searchController;
   final String selectedTable;
@@ -157,19 +178,27 @@ class _ResearchControls extends StatelessWidget {
   final ValueChanged<String> onCategoryChanged;
   final String selectedLinkageSubtype;
   final ValueChanged<String> onLinkageSubtypeChanged;
+  final VoidCallback onReset;
+  final FocusNode searchFocusNode;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final search = TextField(
-          controller: searchController,
-          autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'Search language cards',
-            hintText: 'Search by card text or table',
-            prefixIcon: Icon(Icons.search),
-            border: OutlineInputBorder(),
+        final search = Semantics(
+          textField: true,
+          label: 'Search language cards',
+          child: TextField(
+            controller: searchController,
+            focusNode: searchFocusNode,
+            key: const ValueKey('research-search-field'),
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'Search language cards',
+              hintText: 'Search by card text or table',
+              prefixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(),
+            ),
           ),
         );
         final filter = DropdownButtonFormField<String>(
@@ -208,8 +237,13 @@ class _ResearchControls extends StatelessWidget {
           },
         );
         final showLinkageSubtype = selectedTable == 'All Tables' || selectedTable == 'Linkages';
+        final reset = Semantics(
+          button: true,
+          label: 'Reset research filters',
+          child: TextButton.icon(onPressed: onReset, icon: const Icon(Icons.refresh_rounded, size: 17), label: const Text('Reset Filters')),
+        );
         if (constraints.maxWidth < 1100) {
-          return Column(children: [search, const SizedBox(height: 12), filter, const SizedBox(height: 12), categoryFilter, if (showLinkageSubtype) ...[const SizedBox(height: 12), linkageSubtypeFilter]]);
+          return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [search, const SizedBox(height: 12), filter, const SizedBox(height: 12), categoryFilter, if (showLinkageSubtype) ...[const SizedBox(height: 12), linkageSubtypeFilter], const SizedBox(height: 8), reset]);
         }
         return Column(
           children: [
@@ -218,6 +252,7 @@ class _ResearchControls extends StatelessWidget {
               const SizedBox(height: 12),
               Align(alignment: Alignment.centerLeft, child: SizedBox(width: 220, child: linkageSubtypeFilter)),
             ],
+            Align(alignment: Alignment.centerLeft, child: reset),
           ],
         );
       },

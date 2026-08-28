@@ -582,6 +582,55 @@ void main() {
     expect(find.text('6 results'), findsOneWidget);
   });
 
+  testWidgets('Research Reset Filters restores the full result set', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
+
+    await tester.enterText(find.byKey(const ValueKey('research-search-field')), 'obvious');
+    await tester.tap(find.byKey(const ValueKey('research-table-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Linkages').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('research-category-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Linkage').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('research-linkage-subtype-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Momentum Linkages').last);
+    await tester.pumpAndSettle();
+    expect(find.text('1 results'), findsOneWidget);
+
+    await tester.tap(find.bySemanticsLabel('Reset research filters'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('63 results'), findsOneWidget);
+    expect(find.text('or should I say'), findsOneWidget);
+    expect(find.text('Unclassified'), findsNWidgets(5));
+    expect(tester.widget<TextField>(find.byKey(const ValueKey('research-search-field'))).controller!.text, isEmpty);
+  });
+
+  testWidgets('switching to a non-Linkage table clears hidden subtype state', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
+
+    await tester.tap(find.byKey(const ValueKey('research-linkage-subtype-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Restatement Linkages').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('research-table-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Verbs').last);
+    await tester.pumpAndSettle();
+    expect(find.text('6 results'), findsOneWidget);
+    expect(find.byKey(const ValueKey('research-linkage-subtype-filter')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('research-table-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('All Tables').last);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('research-linkage-subtype-filter')), findsOneWidget);
+    expect(find.text('63 results'), findsOneWidget);
+  });
+
   testWidgets('Research details show the confirmed Linkage subtype', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
     await tester.ensureVisible(find.text('or should I say'));
