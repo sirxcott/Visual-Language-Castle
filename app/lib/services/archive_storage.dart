@@ -7,16 +7,29 @@ import '../models/archived_work.dart';
 import '../models/language_card.dart';
 
 class ArchiveStorage {
-  ArchiveStorage._();
+  ArchiveStorage._({this._fileOverride, this._memoryWorks, this._loadError});
+
+  ArchiveStorage.forTesting(File file, {Object? loadError}) : this._(fileOverride: file, loadError: loadError);
+
+  ArchiveStorage.inMemory([List<ArchivedWork> works = const []]) : this._(memoryWorks: List<ArchivedWork>.of(works));
 
   static final ArchiveStorage instance = ArchiveStorage._();
 
+  final File? _fileOverride;
+  final List<ArchivedWork>? _memoryWorks;
+  final Object? _loadError;
+
   Future<List<ArchivedWork>> loadWorks() async {
+    if (_loadError != null) throw _loadError;
+    if (_memoryWorks != null) return List<ArchivedWork>.of(_memoryWorks);
     final file = await _file;
     if (!await file.exists()) return [];
+    final contents = await file.readAsString();
     try {
-      return decodeWorks(await file.readAsString());
-    } on Object {
+      return decodeWorks(contents);
+    } on FormatException {
+      return [];
+    } on TypeError {
       return [];
     }
   }
@@ -37,6 +50,12 @@ class ArchiveStorage {
   }
 
   Future<void> saveWorks(List<ArchivedWork> works) async {
+    if (_memoryWorks != null) {
+      _memoryWorks
+        ..clear()
+        ..addAll(works);
+      return;
+    }
     final file = await _file;
     await file.parent.create(recursive: true);
     await file.writeAsString(encodeWorks(works));
@@ -62,6 +81,7 @@ class ArchiveStorage {
   }
 
   Future<File> get _file async {
+    if (_fileOverride != null) return _fileOverride;
     final root = Platform.environment['APPDATA'] ?? Platform.environment['HOME'] ?? Directory.systemTemp.path;
     return File('$root${Platform.pathSeparator}VisualLanguageCastle${Platform.pathSeparator}archives.json');
   }

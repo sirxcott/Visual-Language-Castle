@@ -5,7 +5,9 @@ import '../services/archive_storage.dart';
 import 'practice_room_screen.dart';
 
 class CompletedWorksScreen extends StatefulWidget {
-  const CompletedWorksScreen({super.key});
+  const CompletedWorksScreen({super.key, this.storage});
+
+  final ArchiveStorage? storage;
 
   @override
   State<CompletedWorksScreen> createState() => _CompletedWorksScreenState();
@@ -15,6 +17,8 @@ class _CompletedWorksScreenState extends State<CompletedWorksScreen> {
   List<ArchivedWork> _works = [];
   bool _isLoading = true;
 
+  ArchiveStorage get _storage => widget.storage ?? ArchiveStorage.instance;
+
   @override
   void initState() {
     super.initState();
@@ -22,7 +26,15 @@ class _CompletedWorksScreenState extends State<CompletedWorksScreen> {
   }
 
   Future<void> _loadWorks() async {
-    final works = await ArchiveStorage.instance.loadWorks();
+    late final List<ArchivedWork> works;
+    try {
+      works = await _storage.loadWorks();
+    } on Object {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unable to load Completed Works')));
+      return;
+    }
     if (!mounted) return;
     setState(() {
       _works = works.where((work) => work.isCompleted).toList();
@@ -31,7 +43,7 @@ class _CompletedWorksScreenState extends State<CompletedWorksScreen> {
   }
 
   Future<void> _openWork(ArchivedWork work) async {
-    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PracticeRoomScreen(initialCards: work.cards, initialConnections: work.connections, sourceWork: work)));
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PracticeRoomScreen(initialCards: work.cards, initialConnections: work.connections, sourceWork: work, storage: _storage)));
     _loadWorks();
   }
 

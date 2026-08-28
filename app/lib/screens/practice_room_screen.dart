@@ -9,11 +9,14 @@ import '../widgets/table_browser.dart';
 import '../widgets/workspace_card.dart';
 
 class PracticeRoomScreen extends StatefulWidget {
-  const PracticeRoomScreen({super.key, this.initialCards, this.initialConnections, this.sourceWork});
+  const PracticeRoomScreen({super.key, this.initialCards, this.initialConnections, this.sourceWork, this.storage});
 
   final List<WorkspaceCard>? initialCards;
   final List<CardConnection>? initialConnections;
   final ArchivedWork? sourceWork;
+  final ArchiveStorage? storage;
+
+  ArchiveStorage get archiveStorage => storage ?? ArchiveStorage.instance;
 
   @override
   State<PracticeRoomScreen> createState() => _PracticeRoomScreenState();
@@ -34,52 +37,20 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
   }
 
   Future<void> _saveToArchive() async {
-    final nameController = TextEditingController();
-    var nameError = false;
     final name = await showDialog<String>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: const Color(0xFF242627),
-          title: const Text('Save to Archive'),
-          content: TextField(
-            controller: nameController,
-            autofocus: true,
-            decoration: InputDecoration(
-              labelText: 'Work name',
-              hintText: 'Name this wall arrangement',
-              errorText: nameError ? 'A work name is required' : null,
-            ),
-            onSubmitted: (value) {
-              if (value.trim().isEmpty) {
-                setDialogState(() => nameError = true);
-              } else {
-                Navigator.pop(context, value.trim());
-              }
-            },
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-            FilledButton(
-              onPressed: () {
-                final value = nameController.text.trim();
-                if (value.isEmpty) {
-                  setDialogState(() => nameError = true);
-                } else {
-                  Navigator.pop(context, value);
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        ),
-      ),
+      builder: (context) => const _ArchiveNameDialog(),
     );
-    nameController.dispose();
     if (!mounted || name == null || name.isEmpty) return;
-    final works = await ArchiveStorage.instance.loadWorks();
-    works.insert(0, ArchiveStorage.instance.createCopy(name: name, cards: _workspaceCards, connections: _connections));
-    await ArchiveStorage.instance.saveWorks(works);
+    late final List<ArchivedWork> works;
+    try {
+      works = await widget.archiveStorage.loadWorks();
+      works.insert(0, widget.archiveStorage.createCopy(name: name, cards: _workspaceCards, connections: _connections));
+      await widget.archiveStorage.saveWorks(works);
+    } on Object {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unable to save to Archive')));
+      return;
+    }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved to Archive')));
   }
@@ -100,7 +71,13 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
       ),
     );
     if (!mounted || confirmed != true) return;
-    final works = await ArchiveStorage.instance.loadWorks();
+    late final List<ArchivedWork> works;
+    try {
+      works = await widget.archiveStorage.loadWorks();
+    } on Object {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unable to load Archive for update')));
+      return;
+    }
     final updated = ArchivedWork(
       id: sourceWork.id,
       name: sourceWork.name,
@@ -111,7 +88,12 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
       connections: List<CardConnection>.of(_connections),
     );
     if (!works.any((work) => work.id == sourceWork.id)) return;
-    await ArchiveStorage.instance.saveWorks(ArchiveStorage.instance.replaceWork(works, updated));
+    try {
+      await widget.archiveStorage.saveWorks(widget.archiveStorage.replaceWork(works, updated));
+    } on Object {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unable to update Archive')));
+      return;
+    }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Archive updated')));
   }
@@ -319,6 +301,55 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ArchiveNameDialog extends StatefulWidget {
+  const _ArchiveNameDialog();
+
+  @override
+  State<_ArchiveNameDialog> createState() => _ArchiveNameDialogState();
+}
+
+class _ArchiveNameDialogState extends State<_ArchiveNameDialog> {
+  final TextEditingController _nameController = TextEditingController();
+  bool _nameError = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final value = _nameController.text.trim();
+    if (value.isEmpty) {
+      setState(() => _nameError = true);
+    } else {
+      Navigator.pop(context, value);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: const Color(0xFF242627),
+      title: const Text('Save to Archive'),
+      content: TextField(
+        controller: _nameController,
+        autofocus: true,
+        decoration: InputDecoration(
+          labelText: 'Work name',
+          hintText: 'Name this wall arrangement',
+          errorText: _nameError ? 'A work name is required' : null,
+        ),
+        onSubmitted: (_) => _submit(),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        FilledButton(onPressed: _submit, child: const Text('Save')),
+      ],
     );
   }
 }

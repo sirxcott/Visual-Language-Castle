@@ -6,6 +6,7 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,11 +16,93 @@ import 'package:visual_language_castle/main.dart';
 import 'package:visual_language_castle/models/archived_work.dart';
 import 'package:visual_language_castle/models/language_card.dart';
 import 'package:visual_language_castle/screens/archive_screen.dart';
+import 'package:visual_language_castle/screens/completed_works_screen.dart';
 import 'package:visual_language_castle/screens/practice_room_screen.dart';
 import 'package:visual_language_castle/screens/research_laboratory_screen.dart';
 import 'package:visual_language_castle/services/archive_storage.dart';
 
 void main() {
+  testWidgets('Archive loads from injected storage', (WidgetTester tester) async {
+    final storage = ArchiveStorage.inMemory([_testWork(id: 'completed', name: 'Finished', isCompleted: true), _testWork(id: 'draft', name: 'Draft')]);
+    await tester.pumpWidget(MaterialApp(home: ArchiveScreen(storage: storage)));
+    await tester.pumpAndSettle(const Duration(milliseconds: 10), EnginePhase.sendSemanticsUpdate, const Duration(seconds: 2));
+    expect(find.text('Finished'), findsOneWidget);
+    expect(find.text('Draft'), findsOneWidget);
+  });
+
+  testWidgets('Archive opens selected work in Practice Room', (WidgetTester tester) async {
+    final storage = ArchiveStorage.inMemory([_testWork(id: 'completed', name: 'Finished', isCompleted: true), _testWork(id: 'draft', name: 'Draft')]);
+    await tester.pumpWidget(MaterialApp(home: ArchiveScreen(storage: storage)));
+    await tester.pumpAndSettle(const Duration(milliseconds: 10), EnginePhase.sendSemanticsUpdate, const Duration(seconds: 2));
+    await tester.tap(find.byTooltip('Open Finished'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 10), EnginePhase.sendSemanticsUpdate, const Duration(seconds: 2));
+    expect(find.text('The Working Wall'), findsOneWidget);
+    expect(find.text('the room'), findsNWidgets(2));
+    expect(find.byTooltip('Return to Gallery Hall'), findsOneWidget);
+  });
+
+  testWidgets('Completed Works displays completed injected records', (WidgetTester tester) async {
+    final storage = ArchiveStorage.inMemory([_testWork(id: 'completed', name: 'Finished', isCompleted: true), _testWork(id: 'draft', name: 'Draft')]);
+    await tester.pumpWidget(MaterialApp(home: CompletedWorksScreen(storage: storage)));
+    await tester.pumpAndSettle(const Duration(milliseconds: 10), EnginePhase.sendSemanticsUpdate, const Duration(seconds: 2));
+    expect(find.text('Finished'), findsOneWidget);
+    expect(find.text('Draft'), findsNothing);
+  });
+
+  testWidgets('Archive deletion changes only the selected record', (WidgetTester tester) async {
+    final storage = ArchiveStorage.inMemory([_testWork(id: 'first', name: 'First'), _testWork(id: 'second', name: 'Second')]);
+
+    await tester.pumpWidget(MaterialApp(home: ArchiveScreen(storage: storage)));
+    await tester.pump(const Duration(milliseconds: 10));
+    await tester.pumpAndSettle(const Duration(milliseconds: 10), EnginePhase.sendSemanticsUpdate, const Duration(seconds: 2));
+    await tester.tap(find.byTooltip('Delete First'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 10), EnginePhase.sendSemanticsUpdate, const Duration(seconds: 2));
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 10), EnginePhase.sendSemanticsUpdate, const Duration(seconds: 2));
+
+    final works = await storage.loadWorks();
+    expect(works.map((work) => work.id), ['second']);
+  });
+
+  testWidgets('Practice Room updates an archive in place and Save creates a copy', (WidgetTester tester) async {
+    final storage = ArchiveStorage.inMemory();
+    final original = _testWork(id: 'original', name: 'Original', isCompleted: true);
+    await storage.saveWorks([original]);
+
+    await tester.pumpWidget(MaterialApp(home: PracticeRoomScreen(initialCards: original.cards, initialConnections: original.connections, sourceWork: original, storage: storage)));
+    await tester.tap(find.byTooltip('Update Archive'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Update'));
+    await tester.pumpAndSettle();
+    var works = await storage.loadWorks();
+    expect(works, hasLength(1));
+    expect(works.single.id, 'original');
+    expect(works.single.isCompleted, isTrue);
+    expect(works.single.cards.single.instanceId, original.cards.single.instanceId);
+    expect(works.single.cards.single.notes, 'saved note');
+
+    await tester.tap(find.byTooltip('Save to Archive'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Copy');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    works = await storage.loadWorks();
+    expect(works, hasLength(2));
+    expect(works.map((work) => work.id), contains('original'));
+    expect(works.where((work) => work.name == 'Copy'), hasLength(1));
+    expect(works.firstWhere((work) => work.name == 'Copy').id, isNot('original'));
+  });
+
+  testWidgets('Archive shows feedback when loading fails', (WidgetTester tester) async {
+    final storage = ArchiveStorage.forTesting(File('unused-archive.json'), loadError: StateError('test load failure'));
+
+    await tester.pumpWidget(MaterialApp(home: ArchiveScreen(storage: storage)));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Unable to load Archive'), findsOneWidget);
+  });
+
   test('archive decoder preserves valid records around malformed records', () {
     final contents = jsonEncode([
       _archiveJson(id: 'valid-1', name: 'First'),
@@ -291,6 +374,24 @@ Map<String, dynamic> _archiveJson({required String id, required String name}) {
     'cards': [_cardJson(sourceId: 'nom-1', instanceId: 'one')],
     'connections': <Map<String, String>>[],
   };
+}
+
+ArchivedWork _testWork({required String id, required String name, bool isCompleted = false}) {
+  final card = WorkspaceCard(
+    instanceId: '$id-card',
+    card: languageTables.first.cards.first,
+    position: const Offset(40, 50),
+    notes: 'saved note',
+  );
+  return ArchivedWork(
+    id: id,
+    name: name,
+    savedAt: DateTime(2026, 8, 1),
+    cards: [card],
+    connections: const [],
+    isCompleted: isCompleted,
+    completedAt: isCompleted ? DateTime(2026, 8, 2) : null,
+  );
 }
 
 Map<String, dynamic> _cardJson({required String sourceId, String? instanceId}) {

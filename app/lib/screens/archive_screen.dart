@@ -5,7 +5,9 @@ import '../services/archive_storage.dart';
 import 'practice_room_screen.dart';
 
 class ArchiveScreen extends StatefulWidget {
-  const ArchiveScreen({super.key});
+  const ArchiveScreen({super.key, this.storage});
+
+  final ArchiveStorage? storage;
 
   @override
   State<ArchiveScreen> createState() => _ArchiveScreenState();
@@ -15,6 +17,8 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
   List<ArchivedWork> _works = [];
   bool _isLoading = true;
 
+  ArchiveStorage get _storage => widget.storage ?? ArchiveStorage.instance;
+
   @override
   void initState() {
     super.initState();
@@ -22,7 +26,18 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
   }
 
   Future<void> _loadWorks() async {
-    final works = await ArchiveStorage.instance.loadWorks();
+    late final List<ArchivedWork> works;
+    try {
+      works = await _storage.loadWorks();
+    } on Object {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _showStorageError('Unable to load Archive');
+      });
+      return;
+    }
     if (!mounted) return;
     setState(() {
       _works = works;
@@ -31,8 +46,12 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
   }
 
   Future<void> _openWork(ArchivedWork work) async {
-    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PracticeRoomScreen(initialCards: work.cards, initialConnections: work.connections, sourceWork: work)));
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PracticeRoomScreen(initialCards: work.cards, initialConnections: work.connections, sourceWork: work, storage: _storage)));
     _loadWorks();
+  }
+
+  void _showStorageError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _changeCompletion(ArchivedWork work) async {
@@ -52,7 +71,12 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
     if (!mounted || confirmed != true) return;
     work.isCompleted = completing;
     work.completedAt = completing ? DateTime.now() : null;
-    await ArchiveStorage.instance.saveWorks(_works);
+    try {
+      await _storage.saveWorks(_works);
+    } on Object {
+      _showStorageError('Unable to update Archive');
+      return;
+    }
     if (mounted) setState(() {});
   }
 
@@ -73,7 +97,12 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
     controller.dispose();
     if (!mounted || name == null || name.isEmpty) return;
     work.name = name;
-    await ArchiveStorage.instance.saveWorks(_works);
+    try {
+      await _storage.saveWorks(_works);
+    } on Object {
+      _showStorageError('Unable to rename archived work');
+      return;
+    }
     if (mounted) setState(() {});
   }
 
@@ -92,7 +121,12 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
     );
     if (!mounted || confirmed != true) return;
     _works.removeWhere((item) => item.id == work.id);
-    await ArchiveStorage.instance.saveWorks(_works);
+    try {
+      await _storage.saveWorks(_works);
+    } on Object {
+      _showStorageError('Unable to delete archived work');
+      return;
+    }
     if (mounted) setState(() {});
   }
 
