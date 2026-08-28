@@ -13,6 +13,7 @@ class ResearchLaboratoryScreen extends StatefulWidget {
 class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedTable = 'All Tables';
+  String _selectedCategory = 'All Categories';
 
   List<LanguageCard> get _allCards => [for (final table in languageTables) ...table.cards];
 
@@ -20,8 +21,9 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
     final query = _searchController.text.trim().toLowerCase();
     return _allCards.where((card) {
       final matchesTable = _selectedTable == 'All Tables' || card.tableName == _selectedTable;
+      final matchesCategory = _selectedCategory == 'All Categories' || card.category.label == _selectedCategory;
       final matchesSearch = query.isEmpty || card.text.toLowerCase().contains(query) || card.tableName.toLowerCase().contains(query);
-      return matchesTable && matchesSearch;
+      return matchesTable && matchesCategory && matchesSearch;
     }).toList();
   }
 
@@ -97,6 +99,8 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
                       searchController: _searchController,
                       selectedTable: _selectedTable,
                       onTableChanged: (value) => setState(() => _selectedTable = value),
+                      selectedCategory: _selectedCategory,
+                      onCategoryChanged: (value) => setState(() => _selectedCategory = value),
                     ),
                     const SizedBox(height: 20),
                     _buildResults(),
@@ -133,11 +137,13 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
 }
 
 class _ResearchControls extends StatelessWidget {
-  const _ResearchControls({required this.searchController, required this.selectedTable, required this.onTableChanged});
+  const _ResearchControls({required this.searchController, required this.selectedTable, required this.onTableChanged, required this.selectedCategory, required this.onCategoryChanged});
 
   final TextEditingController searchController;
   final String selectedTable;
   final ValueChanged<String> onTableChanged;
+  final String selectedCategory;
+  final ValueChanged<String> onCategoryChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -156,20 +162,36 @@ class _ResearchControls extends StatelessWidget {
         final filter = DropdownButtonFormField<String>(
           initialValue: selectedTable,
           isExpanded: true,
+          key: const ValueKey('research-table-filter'),
           decoration: const InputDecoration(labelText: 'Table', border: OutlineInputBorder()),
           items: ['All Tables', ...languageTables.map((table) => table.name)].map((table) => DropdownMenuItem(value: table, child: Text(table, maxLines: 1, overflow: TextOverflow.ellipsis))).toList(),
           onChanged: (value) {
             if (value != null) onTableChanged(value);
           },
         );
-        if (constraints.maxWidth < 620) {
-          return Column(children: [search, const SizedBox(height: 12), filter]);
+        final categoryFilter = DropdownButtonFormField<String>(
+          initialValue: selectedCategory,
+          isExpanded: true,
+          key: const ValueKey('research-category-filter'),
+          decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
+          items: [
+            'All Categories',
+            ...CardCategory.values.where((category) => _allCardsHaveCategory(category)).map((category) => category.label),
+          ].map((category) => DropdownMenuItem(value: category, child: Text(category, maxLines: 1, overflow: TextOverflow.ellipsis))).toList(),
+          onChanged: (value) {
+            if (value != null) onCategoryChanged(value);
+          },
+        );
+        if (constraints.maxWidth < 1100) {
+          return Column(children: [search, const SizedBox(height: 12), filter, const SizedBox(height: 12), categoryFilter]);
         }
-        return Row(children: [Expanded(child: search), const SizedBox(width: 14), SizedBox(width: 250, child: filter)]);
+        return Row(children: [Expanded(child: search), const SizedBox(width: 14), SizedBox(width: 220, child: filter), const SizedBox(width: 14), SizedBox(width: 220, child: categoryFilter)]);
       },
     );
   }
 }
+
+bool _allCardsHaveCategory(CardCategory category) => languageTables.any((table) => table.cards.any((card) => card.category == category));
 
 class _ResearchResultCard extends StatelessWidget {
   const _ResearchResultCard({required this.card, required this.onTap});
@@ -195,7 +217,7 @@ class _ResearchResultCard extends StatelessWidget {
               const Spacer(),
               Text(card.tableName, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFA9A294), fontSize: 12)),
               const SizedBox(height: 6),
-              Row(children: [Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)), const SizedBox(width: 7), Text(card.category.label, style: TextStyle(color: color, fontSize: 11)), const Spacer(), const Icon(Icons.open_in_new_rounded, size: 15, color: Color(0xFF80796C))]),
+              Row(children: [Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)), const SizedBox(width: 7), Flexible(child: Text(card.category.label, overflow: TextOverflow.ellipsis, style: TextStyle(color: color, fontSize: 11))), const SizedBox(width: 8), const Icon(Icons.open_in_new_rounded, size: 15, color: Color(0xFF80796C))]),
             ],
           ),
         ),

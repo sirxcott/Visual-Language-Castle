@@ -16,6 +16,7 @@ import 'package:visual_language_castle/models/archived_work.dart';
 import 'package:visual_language_castle/models/language_card.dart';
 import 'package:visual_language_castle/screens/archive_screen.dart';
 import 'package:visual_language_castle/screens/practice_room_screen.dart';
+import 'package:visual_language_castle/screens/research_laboratory_screen.dart';
 import 'package:visual_language_castle/services/archive_storage.dart';
 
 void main() {
@@ -97,6 +98,37 @@ void main() {
 
     expect(find.text(source.text), findsNWidgets(2));
     expect(find.byTooltip('Remove from wall'), findsOneWidget);
+  });
+
+  testWidgets('Research Laboratory filters by category', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
+
+    await tester.tap(find.byKey(const ValueKey('research-category-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Verb').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('notice'), findsOneWidget);
+    expect(find.text('the room'), findsNothing);
+  });
+
+  testWidgets('Research Laboratory combines search, table, and category filters', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
+
+    await tester.tap(find.byKey(const ValueKey('research-table-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Verbs').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('research-category-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Verb').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'notice');
+    await tester.pumpAndSettle();
+
+    expect(find.text('notice'), findsNWidgets(2));
+    expect(find.text('allow'), findsNothing);
+    expect(find.text('the room'), findsNothing);
   });
 
   test('workspace copies have independent instance identities', () {
