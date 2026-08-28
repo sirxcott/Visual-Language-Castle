@@ -32,6 +32,65 @@ void main() {
     expect(works.map((work) => work.id), ['valid-1', 'valid-2']);
   });
 
+  test('archive update replaces one record and preserves its full snapshot', () {
+    final firstCard = WorkspaceCard(instanceId: 'copy-a', card: languageTables.first.cards.first, position: const Offset(10, 20), notes: 'first note');
+    final secondCard = WorkspaceCard(instanceId: 'copy-b', card: languageTables.first.cards.first, position: const Offset(30, 40), notes: 'second note');
+    final original = ArchivedWork(
+      id: 'original',
+      name: 'Original',
+      savedAt: DateTime(2026, 8, 1),
+      isCompleted: true,
+      completedAt: DateTime(2026, 8, 2),
+      cards: [firstCard, secondCard],
+      connections: [CardConnection(fromCardId: 'copy-a', toCardId: 'copy-b')],
+    );
+    final unrelated = ArchivedWork(id: 'unrelated', name: 'Keep me', savedAt: DateTime(2026, 8, 3), cards: const []);
+    final updated = ArchivedWork(
+      id: original.id,
+      name: original.name,
+      savedAt: original.savedAt,
+      isCompleted: original.isCompleted,
+      completedAt: original.completedAt,
+      cards: [firstCard, secondCard],
+      connections: original.connections,
+    );
+
+    final works = ArchiveStorage.instance.replaceWork([original, unrelated], updated);
+    final restored = ArchiveStorage.instance.decodeWorks(ArchiveStorage.instance.encodeWorks(works));
+
+    expect(restored.map((work) => work.id), ['original', 'unrelated']);
+    expect(restored.first.isCompleted, isTrue);
+    expect(restored.first.completedAt, original.completedAt);
+    expect(restored.first.cards.map((card) => card.instanceId), ['copy-a', 'copy-b']);
+    expect(restored.first.cards.map((card) => card.notes), ['first note', 'second note']);
+    expect(restored.first.connections.single.fromCardId, 'copy-a');
+    expect(restored.first.connections.single.toCardId, 'copy-b');
+    expect(restored[1].name, 'Keep me');
+  });
+
+  test('archive copy gets a new ID while preserving duplicate cards and connections', () {
+    final source = ArchivedWork(
+      id: 'source',
+      name: 'Source',
+      savedAt: DateTime(2026, 8, 1),
+      cards: [
+        WorkspaceCard(instanceId: 'copy-a', card: languageTables.first.cards.first, position: Offset.zero, notes: 'note a'),
+        WorkspaceCard(instanceId: 'copy-b', card: languageTables.first.cards.first, position: const Offset(20, 20), notes: 'note b'),
+      ],
+      connections: const [CardConnection(fromCardId: 'copy-a', toCardId: 'copy-b')],
+    );
+
+    final copy = ArchiveStorage.instance.createCopy(name: 'Copy', cards: source.cards, connections: source.connections);
+    final restored = ArchiveStorage.instance.decodeWorks(ArchiveStorage.instance.encodeWorks([copy])).single;
+
+    expect(copy.id, isNot(source.id));
+    expect(copy.name, 'Copy');
+    expect(restored.cards.map((card) => card.instanceId), ['copy-a', 'copy-b']);
+    expect(restored.cards.map((card) => card.notes), ['note a', 'note b']);
+    expect(restored.connections.single.fromCardId, 'copy-a');
+    expect(restored.connections.single.toCardId, 'copy-b');
+  });
+
   test('archive decoder safely skips malformed connection entries', () {
     final archive = _archiveJson(id: 'connections', name: 'Connections')..['connections'] = [
       {'from': 'one', 'to': 'two'},

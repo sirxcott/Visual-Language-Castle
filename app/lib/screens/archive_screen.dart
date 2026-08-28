@@ -31,7 +31,7 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
   }
 
   Future<void> _openWork(ArchivedWork work) async {
-    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PracticeRoomScreen(initialCards: work.cards, initialConnections: work.connections)));
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PracticeRoomScreen(initialCards: work.cards, initialConnections: work.connections, sourceWork: work)));
     _loadWorks();
   }
 

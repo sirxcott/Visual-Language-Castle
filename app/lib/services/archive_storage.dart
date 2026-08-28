@@ -39,7 +39,26 @@ class ArchiveStorage {
   Future<void> saveWorks(List<ArchivedWork> works) async {
     final file = await _file;
     await file.parent.create(recursive: true);
-    await file.writeAsString(jsonEncode(works.map(_toJson).toList()));
+    await file.writeAsString(encodeWorks(works));
+  }
+
+  String encodeWorks(List<ArchivedWork> works) => jsonEncode(works.map(_toJson).toList());
+
+  ArchivedWork createCopy({required String name, required List<WorkspaceCard> cards, required List<CardConnection> connections}) {
+    return ArchivedWork(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      name: name,
+      savedAt: DateTime.now(),
+      cards: cards.map((card) => WorkspaceCard(instanceId: card.instanceId, card: card.card, position: card.position, notes: card.notes)).toList(),
+      connections: List<CardConnection>.of(connections),
+    );
+  }
+
+  List<ArchivedWork> replaceWork(List<ArchivedWork> works, ArchivedWork updated) {
+    final replacement = List<ArchivedWork>.of(works);
+    final index = replacement.indexWhere((work) => work.id == updated.id);
+    if (index >= 0) replacement[index] = updated;
+    return replacement;
   }
 
   Future<File> get _file async {

@@ -9,10 +9,11 @@ import '../widgets/table_browser.dart';
 import '../widgets/workspace_card.dart';
 
 class PracticeRoomScreen extends StatefulWidget {
-  const PracticeRoomScreen({super.key, this.initialCards, this.initialConnections});
+  const PracticeRoomScreen({super.key, this.initialCards, this.initialConnections, this.sourceWork});
 
   final List<WorkspaceCard>? initialCards;
   final List<CardConnection>? initialConnections;
+  final ArchivedWork? sourceWork;
 
   @override
   State<PracticeRoomScreen> createState() => _PracticeRoomScreenState();
@@ -77,19 +78,42 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
     nameController.dispose();
     if (!mounted || name == null || name.isEmpty) return;
     final works = await ArchiveStorage.instance.loadWorks();
-    works.insert(
-      0,
-      ArchivedWork(
-        id: DateTime.now().microsecondsSinceEpoch.toString(),
-        name: name,
-        savedAt: DateTime.now(),
-        cards: _workspaceCards.map((card) => WorkspaceCard(instanceId: card.instanceId, card: card.card, position: card.position, notes: card.notes)).toList(),
-        connections: List<CardConnection>.of(_connections),
-      ),
-    );
+    works.insert(0, ArchiveStorage.instance.createCopy(name: name, cards: _workspaceCards, connections: _connections));
     await ArchiveStorage.instance.saveWorks(works);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved to Archive')));
+  }
+
+  Future<void> _updateArchive() async {
+    final sourceWork = widget.sourceWork;
+    if (sourceWork == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF242627),
+        title: const Text('Update archive?'),
+        content: Text('Overwrite "${sourceWork.name}" with the current Working Wall?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Update')),
+        ],
+      ),
+    );
+    if (!mounted || confirmed != true) return;
+    final works = await ArchiveStorage.instance.loadWorks();
+    final updated = ArchivedWork(
+      id: sourceWork.id,
+      name: sourceWork.name,
+      savedAt: sourceWork.savedAt,
+      isCompleted: sourceWork.isCompleted,
+      completedAt: sourceWork.completedAt,
+      cards: _workspaceCards.map((card) => WorkspaceCard(instanceId: card.instanceId, card: card.card, position: card.position, notes: card.notes)).toList(),
+      connections: List<CardConnection>.of(_connections),
+    );
+    if (!works.any((work) => work.id == sourceWork.id)) return;
+    await ArchiveStorage.instance.saveWorks(ArchiveStorage.instance.replaceWork(works, updated));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Archive updated')));
   }
 
   void _changeTable(int amount) {
@@ -238,7 +262,7 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              _RoomHeader(onBack: () => Navigator.of(context).pop(), onSave: _saveToArchive, connectionMode: _connectionMode, onToggleConnections: _toggleConnectionMode),
+              _RoomHeader(onBack: () => Navigator.of(context).pop(), onSave: _saveToArchive, onUpdate: widget.sourceWork == null ? null : _updateArchive, connectionMode: _connectionMode, onToggleConnections: _toggleConnectionMode),
               Expanded(
                 child: Row(
                   children: [
@@ -300,10 +324,11 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
 }
 
 class _RoomHeader extends StatelessWidget {
-  const _RoomHeader({required this.onBack, required this.onSave, required this.connectionMode, required this.onToggleConnections});
+  const _RoomHeader({required this.onBack, required this.onSave, required this.onUpdate, required this.connectionMode, required this.onToggleConnections});
 
   final VoidCallback onBack;
   final VoidCallback onSave;
+  final VoidCallback? onUpdate;
   final bool connectionMode;
   final VoidCallback onToggleConnections;
 
@@ -341,6 +366,13 @@ class _RoomHeader extends StatelessWidget {
             IconButton(tooltip: 'Save to Archive', onPressed: onSave, icon: const Icon(Icons.archive_outlined))
           else
             FilledButton.icon(onPressed: onSave, icon: const Icon(Icons.archive_outlined, size: 17), label: const Text('Save to Archive')),
+          if (onUpdate != null) ...[
+            const SizedBox(width: 10),
+            if (compact)
+              IconButton(tooltip: 'Update Archive', onPressed: onUpdate, icon: const Icon(Icons.save_outlined))
+            else
+              FilledButton.icon(onPressed: onUpdate, icon: const Icon(Icons.save_outlined, size: 17), label: const Text('Update Archive')),
+          ],
           const SizedBox(width: 10),
         ],
       ),
