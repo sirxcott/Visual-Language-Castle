@@ -69,6 +69,9 @@ const languageTables = <LanguageTable>[
       LanguageCard(id: 'time-2', text: 'while you', category: CardCategory.darkBlue, tableName: 'Time Binds'),
       LanguageCard(id: 'time-3', text: 'after you', category: CardCategory.darkBlue, tableName: 'Time Binds'),
       LanguageCard(id: 'time-4', text: 'now that', category: CardCategory.darkBlue, tableName: 'Time Binds'),
+      LanguageCard(id: 'time-5', text: 'when you', category: CardCategory.darkBlue, tableName: 'Time Binds'),
+      LanguageCard(id: 'time-6', text: 'as you', category: CardCategory.darkBlue, tableName: 'Time Binds'),
+      LanguageCard(id: 'time-7', text: 'once you', category: CardCategory.darkBlue, tableName: 'Time Binds'),
     ],
   ),
   LanguageTable(
