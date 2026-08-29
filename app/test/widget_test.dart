@@ -660,6 +660,38 @@ void main() {
     expect(linkageSubtypeLabel(card), 'Restatement Linkages');
   });
 
+  test('blue-family roles follow the confirmed practical model', () {
+    final tablesByName = {for (final table in languageTables) table.name: table};
+    final timeBinds = tablesByName['Time Binds']!.cards;
+    final causeAndEffect = tablesByName['Cause and Effect']!.cards;
+    final lyModifiers = tablesByName['LY Modifiers']!.cards;
+
+    expect(timeBinds.every((card) => card.category == CardCategory.darkBlue), isTrue);
+    expect(causeAndEffect.every((card) => card.category == CardCategory.lightBlue), isTrue);
+    expect(lyModifiers.every((card) => card.category == CardCategory.lyModifier), isTrue);
+    expect(CardCategory.darkBlue.color, const Color(0xFF466D9E));
+    expect(CardCategory.lightBlue.color, const Color(0xFF7893C7));
+    expect(CardCategory.lyModifier.color, const Color(0xFF66A6B8));
+    expect(tablesByName.keys, isNot(contains('Presuppositions')));
+    expect(tablesByName['Linkages'], isNotNull);
+    expect(tablesByName['Cause and Effect'], isNotNull);
+    expect(tablesByName['Linkages']!.cards, isNotEmpty);
+    expect(tablesByName['Cause and Effect']!.cards, isNotEmpty);
+  });
+
+  test('blue-family color metadata does not alter archive serialization', () {
+    final cards = [
+      ...languageTables.firstWhere((table) => table.name == 'Time Binds').cards.take(1),
+      ...languageTables.firstWhere((table) => table.name == 'Cause and Effect').cards.take(1),
+      ...languageTables.firstWhere((table) => table.name == 'LY Modifiers').cards.take(1),
+    ].map((card) => WorkspaceCard(instanceId: 'blue-${card.id}', card: card, position: Offset.zero)).toList();
+    final work = ArchivedWork(id: 'blue-family', name: 'Blue Family', savedAt: DateTime(2026, 8, 28), cards: cards);
+    final encodedCards = ((jsonDecode(ArchiveStorage.instance.encodeWorks([work])) as List<dynamic>).single as Map<String, dynamic>)['cards'] as List<dynamic>;
+
+    expect(encodedCards.map((card) => (card as Map<String, dynamic>)['category']), ['darkBlue', 'lightBlue', 'lyModifier']);
+    expect(encodedCards.every((card) => !(card as Map<String, dynamic>).containsKey('color')), isTrue);
+  });
+
   test('workspace copies have independent instance identities', () {
     final sourceCard = languageTables.first.cards.first;
     final first = WorkspaceCard(card: sourceCard, position: Offset.zero);

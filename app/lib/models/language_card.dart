@@ -12,6 +12,9 @@ enum CardCategory {
   tranceWordplay,
 }
 
+// Tables contain categories; a phrase may overlap categories when it serves
+// multiple functions. These blue-family colors describe the current practical
+// model and are intentionally provisional rather than academic taxonomy.
 extension CardCategoryDetails on CardCategory {
   String get label {
     switch (this) {
@@ -49,11 +52,14 @@ extension CardCategoryDetails on CardCategory {
       case CardCategory.yellow:
         return const Color(0xFFC2A650);
       case CardCategory.darkBlue:
+        // Standard blue: temporal structures that locate or bind events.
         return const Color(0xFF466D9E);
       case CardCategory.lightBlue:
-        return const Color(0xFF66A6B8);
-      case CardCategory.lyModifier:
+        // Dark blue: a condition leading to an implied result.
         return const Color(0xFF7893C7);
+      case CardCategory.lyModifier:
+        // Light blue: ongoing process and current moment experience.
+        return const Color(0xFF66A6B8);
       case CardCategory.tranceWordplay:
         return const Color(0xFF8D527F);
     }

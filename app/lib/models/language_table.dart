@@ -6,3 +6,6 @@ class LanguageTable {
   final String name;
   final List<LanguageCard> cards;
 }
+
+// Linkages are spoken scaffolding between sentences, not commands or
+// suggestions. Cause and Effect remains a separate table/function.
