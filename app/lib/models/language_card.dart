@@ -5,7 +5,8 @@ enum CardCategory {
   pink,
   green,
   red,
-  yellow,
+  notice,
+  embedded,
   darkBlue,
   lightBlue,
   lyModifier,
@@ -26,8 +27,10 @@ extension CardCategoryDetails on CardCategory {
         return 'Linkage';
       case CardCategory.red:
         return 'Compliance Set';
-      case CardCategory.yellow:
-        return 'Noticing';
+      case CardCategory.notice:
+        return 'Notice';
+      case CardCategory.embedded:
+        return 'Embedded';
       case CardCategory.darkBlue:
         return 'Time Bind';
       case CardCategory.lightBlue:
@@ -49,8 +52,12 @@ extension CardCategoryDetails on CardCategory {
         return const Color(0xFF5D9A78);
       case CardCategory.red:
         return const Color(0xFFB94D4B);
-      case CardCategory.yellow:
-        return const Color(0xFFC2A650);
+      case CardCategory.notice:
+        // Bright yellow: Notice Statements / Notice Commands that direct attention.
+        return const Color(0xFFD4A325);
+      case CardCategory.embedded:
+        // Muted/dull yellow: Embedded Commands hidden or distributed inside sentences.
+        return const Color(0xFF8F8140);
       case CardCategory.darkBlue:
         // Standard blue: temporal structures that locate or bind events.
         return const Color(0xFF466D9E);

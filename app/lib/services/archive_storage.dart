@@ -131,6 +131,13 @@ class ArchiveStorage {
     };
   }
 
+CardCategory _parseCategory(String name) {
+  if (name == 'yellow' || name == 'noticing' || name == 'notice') {
+    return CardCategory.notice;
+  }
+  return CardCategory.values.byName(name);
+}
+
   ArchivedWork _fromJson(Map<String, dynamic> json) {
     final archiveId = json['id'] as String;
     final rawCards = json['cards'] as List<dynamic>;
@@ -143,7 +150,7 @@ class ArchiveStorage {
         card: LanguageCard(
           id: card['id'] as String,
           text: card['text'] as String,
-          category: CardCategory.values.byName(card['category'] as String),
+          category: _parseCategory(card['category'] as String),
           tableName: card['tableName'] as String,
           referenceNote: card['referenceNote'] as String? ?? '',
         ),

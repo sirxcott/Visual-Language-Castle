@@ -62,13 +62,18 @@ const languageTables = <LanguageTable>[
     ],
   ),
   LanguageTable(
-    name: 'Noticing / Embedded',
+    name: 'Notice',
     cards: [
-      LanguageCard(id: 'notice-1', text: 'you may notice', category: CardCategory.yellow, tableName: 'Noticing / Embedded'),
-      LanguageCard(id: 'notice-2', text: 'you can begin to', category: CardCategory.yellow, tableName: 'Noticing / Embedded'),
-      LanguageCard(id: 'notice-3', text: 'as you become aware', category: CardCategory.yellow, tableName: 'Noticing / Embedded'),
-      LanguageCard(id: 'notice-4', text: 'it is interesting to notice', category: CardCategory.yellow, tableName: 'Noticing / Embedded'),
+      LanguageCard(id: 'notice-1', text: 'you may notice', category: CardCategory.notice, tableName: 'Notice'),
+      // Note: "you can begin to" is provisionally placed here because it is a general permissive lead-in rather than an explicit awareness statement.
+      LanguageCard(id: 'notice-2', text: 'you can begin to', category: CardCategory.notice, tableName: 'Notice'),
+      LanguageCard(id: 'notice-3', text: 'as you become aware', category: CardCategory.notice, tableName: 'Notice'),
+      LanguageCard(id: 'notice-4', text: 'it is interesting to notice', category: CardCategory.notice, tableName: 'Notice'),
     ],
+  ),
+  LanguageTable(
+    name: 'Embedded',
+    cards: [],
   ),
   LanguageTable(
     name: 'Time Binds',

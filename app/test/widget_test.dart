@@ -869,15 +869,75 @@ void main() {
     expect(stackKeys().last, const ValueKey('overlap-first'));
   });
 
-  test('every production table has visible card data with a resolved category color', () {
-    expect(languageTables, hasLength(9));
+  test('Notice and Embedded are distinct yellow-family categories', () {
+    final tablesByName = {for (final table in languageTables) table.name: table};
+    expect(tablesByName, contains('Notice'));
+    expect(tablesByName, contains('Embedded'));
+
+    final noticeTable = tablesByName['Notice']!;
+    final embeddedTable = tablesByName['Embedded']!;
+
+    expect(noticeTable.cards, hasLength(4));
+    expect(noticeTable.cards.map((c) => c.id), ['notice-1', 'notice-2', 'notice-3', 'notice-4']);
+    expect(noticeTable.cards.every((c) => c.category == CardCategory.notice), isTrue);
+
+    expect(embeddedTable.cards, isEmpty);
+
+    expect(CardCategory.notice.label, 'Notice');
+    expect(CardCategory.embedded.label, 'Embedded');
+
+    expect(CardCategory.notice.color, const Color(0xFFD4A325));
+    expect(CardCategory.embedded.color, const Color(0xFF8F8140));
+    expect(CardCategory.notice.color, isNot(equals(CardCategory.embedded.color)));
+  });
+
+  testWidgets('Research Laboratory filters distinguish Notice and Embedded', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
+
+    await tester.tap(find.byKey(const ValueKey('research-category-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Notice').last);
+    await tester.pumpAndSettle();
+    expect(find.text('4 results'), findsOneWidget);
+    expect(find.text('you may notice'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('research-category-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Embedded').last);
+    await tester.pumpAndSettle();
+    expect(find.text('0 results'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('research-category-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('All Categories').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('research-table-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Notice').last);
+    await tester.pumpAndSettle();
+    expect(find.text('4 results'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('research-table-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Embedded').last);
+    await tester.pumpAndSettle();
+    expect(find.text('0 results'), findsOneWidget);
+  });
+
+  test('every production table has defined metadata and resolved category color', () {
+    expect(languageTables, hasLength(10));
     for (final table in languageTables) {
       expect(table.name, isNotEmpty);
-      expect(table.cards, isNotEmpty);
-      for (final card in table.cards) {
-        expect(card.text.trim(), isNotEmpty);
-        expect(card.category.label, isNotEmpty);
-        expect(card.category.color.a, greaterThan(0));
+      if (table.name == 'Embedded') {
+        expect(table.cards, isEmpty);
+      } else {
+        expect(table.cards, isNotEmpty);
+        for (final card in table.cards) {
+          expect(card.text.trim(), isNotEmpty);
+          expect(card.category.label, isNotEmpty);
+          expect(card.category.color.a, greaterThan(0));
+        }
       }
     }
   });
@@ -889,8 +949,13 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: PracticeRoomScreen()));
 
     for (var index = 0; index < languageTables.length; index++) {
-      expect(find.byTooltip('Add to Wall'), findsWidgets);
-      expect(find.text(languageTables[index].cards.first.text), findsOneWidget);
+      final table = languageTables[index];
+      if (table.cards.isNotEmpty) {
+        expect(find.byTooltip('Add to Wall'), findsWidgets);
+        expect(find.text(table.cards.first.text), findsOneWidget);
+      } else {
+        expect(find.text(table.name), findsOneWidget);
+      }
       await tester.tap(find.byTooltip('Next table (D)'));
       await tester.pump();
     }
@@ -937,7 +1002,7 @@ void main() {
     expect(find.text('TABLE BROWSER'), findsOneWidget);
     expect(find.text('Nominals'), findsOneWidget);
 
-    for (var index = 0; index < 8; index++) {
+    for (var index = 0; index < languageTables.length - 1; index++) {
       await tester.tap(find.byTooltip('Next table (D)'));
       await tester.pump();
     }

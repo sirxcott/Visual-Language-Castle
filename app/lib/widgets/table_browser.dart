@@ -35,11 +35,13 @@ class TableBrowser extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(20, mobile ? 10 : 18, 16, mobile ? 6 : 12),
+            padding: EdgeInsets.fromLTRB(16, mobile ? 10 : 18, 12, mobile ? 6 : 12),
             child: Row(
               children: [
-                const Text('TABLE BROWSER', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 2)),
-                const Spacer(),
+                const Expanded(
+                  child: Text('TABLE BROWSER', overflow: TextOverflow.ellipsis, style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 1.8)),
+                ),
+                const SizedBox(width: 8),
                 Text('${tableIndex + 1} / $tableCount', style: const TextStyle(color: Color(0xFF827967), fontSize: 11)),
               ],
             ),

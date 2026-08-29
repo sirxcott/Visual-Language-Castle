@@ -218,7 +218,7 @@ class _ResearchControls extends StatelessWidget {
           decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
           items: [
             'All Categories',
-            ...CardCategory.values.where((category) => _allCardsHaveCategory(category)).map((category) => category.label),
+            ...CardCategory.values.map((category) => category.label),
           ].map((category) => DropdownMenuItem(value: category, child: Text(category, maxLines: 1, overflow: TextOverflow.ellipsis))).toList(),
           onChanged: (value) {
             if (value != null) onCategoryChanged(value);
@@ -259,8 +259,6 @@ class _ResearchControls extends StatelessWidget {
     );
   }
 }
-
-bool _allCardsHaveCategory(CardCategory category) => languageTables.any((table) => table.cards.any((card) => card.category == category));
 
 class _ResearchResultCard extends StatelessWidget {
   const _ResearchResultCard({required this.card, required this.onTap});
