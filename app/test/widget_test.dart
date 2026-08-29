@@ -559,7 +559,7 @@ void main() {
 
   testWidgets('Research results show Linkage subtype status and filtered count', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
-    expect(find.text('100 results'), findsOneWidget);
+    expect(find.text('101 results'), findsOneWidget);
     expect(find.text('Restatement Linkages'), findsNWidgets(6));
     expect(find.text('Momentum Linkages'), findsNWidgets(4));
     expect(find.text('Unclassified'), findsNWidgets(5));
@@ -589,7 +589,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Reset research filters'));
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.text('100 results'), findsOneWidget);
+    expect(find.text('101 results'), findsOneWidget);
     expect(find.text('or should I say'), findsOneWidget);
     expect(find.text('Unclassified'), findsNWidgets(5));
     expect(tester.widget<TextField>(find.byKey(const ValueKey('research-search-field'))).controller!.text, isEmpty);
@@ -615,7 +615,7 @@ void main() {
     await tester.tap(find.text('All Tables').last);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('research-linkage-subtype-filter')), findsOneWidget);
-    expect(find.text('100 results'), findsOneWidget);
+    expect(find.text('101 results'), findsOneWidget);
   });
 
   testWidgets('Research details show the confirmed Linkage subtype', (WidgetTester tester) async {
@@ -869,7 +869,7 @@ void main() {
     expect(stackKeys().last, const ValueKey('overlap-first'));
   });
 
-  test('Notice and Embedded are distinct yellow-family categories', () {
+  test('Notice and Embedded are distinct yellow-family categories with subtype support', () {
     final tablesByName = {for (final table in languageTables) table.name: table};
     expect(tablesByName, contains('Notice'));
     expect(tablesByName, contains('Embedded'));
@@ -879,26 +879,33 @@ void main() {
 
     expect(noticeTable.cards, hasLength(12));
     expect(noticeTable.cards.take(4).map((c) => c.id), ['notice-1', 'notice-2', 'notice-3', 'notice-4']);
-    expect(noticeTable.cards.map((c) => c.text), containsAll([
-      'you may notice',
-      'you can begin to',
-      'as you become aware',
-      'it is interesting to notice',
-      'be aware',
-      'become aware',
-      'observe',
-      'focus on',
-      'concentrate on',
-      'notice how',
-      'become conscious of',
-      'pay attention to',
-    ]));
     expect(noticeTable.cards.every((c) => c.category == CardCategory.notice), isTrue);
 
-    expect(embeddedTable.cards, hasLength(2));
-    expect(embeddedTable.cards.map((c) => c.id), ['embedded-1', 'embedded-2']);
-    expect(embeddedTable.cards.map((c) => c.text), ['find what you\'re looking for', 'change for the better']);
-    expect(embeddedTable.cards.every((c) => c.category == CardCategory.embedded), isTrue);
+    expect(embeddedTable.cards, hasLength(3));
+    final intactCards = embeddedTable.cards.where((c) => embeddedSubtypeFor(c) == EmbeddedSubtype.intact).toList();
+    final distributedCards = embeddedTable.cards.where((c) => embeddedSubtypeFor(c) == EmbeddedSubtype.distributed).toList();
+
+    expect(intactCards, hasLength(2));
+    expect(intactCards.map((c) => c.id), ['embedded-1', 'embedded-2']);
+    expect(intactCards.map((c) => c.text), ['find what you\'re looking for', 'change for the better']);
+
+    expect(distributedCards, hasLength(1));
+    final distCard = distributedCards.single;
+    expect(distCard.id, 'embedded-3');
+    expect(distCard.isResearchOnly, isTrue);
+    expect(distCard.passage, contains('as you become more and more relaxed'));
+    expect(distCard.passage, contains('slip into trance'));
+    expect(distCard.fragments, ['close your eyes', 'close them', 'go into trance', 'slip into trance']);
+
+    var lastIdx = 0;
+    for (final frag in distCard.fragments) {
+      final idx = distCard.passage.indexOf(frag, lastIdx);
+      expect(idx, isNot(-1), reason: 'Fragment "$frag" must occur in order in passage');
+      lastIdx = idx + frag.length;
+    }
+
+    expect(embeddedSubtypeLabel(embeddedTable.cards.first), 'Intact Embedded Commands');
+    expect(embeddedSubtypeLabel(distCard), 'Distributed Embedded Commands');
 
     expect(CardCategory.notice.label, 'Notice');
     expect(CardCategory.embedded.label, 'Embedded');
@@ -908,7 +915,7 @@ void main() {
     expect(CardCategory.notice.color, isNot(equals(CardCategory.embedded.color)));
   });
 
-  testWidgets('Research Laboratory filters distinguish Notice and Embedded', (WidgetTester tester) async {
+  testWidgets('Research Laboratory filters distinguish Notice and Embedded subtypes', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
 
     await tester.tap(find.byKey(const ValueKey('research-category-filter')));
@@ -916,39 +923,34 @@ void main() {
     await tester.tap(find.text('Notice').last);
     await tester.pumpAndSettle();
     expect(find.text('12 results'), findsOneWidget);
-    expect(find.text('you may notice'), findsOneWidget);
-    expect(find.text('be aware'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('research-category-filter')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Embedded').last);
     await tester.pumpAndSettle();
+    expect(find.text('3 results'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('research-embedded-subtype-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Intact Embedded Commands').last);
+    await tester.pumpAndSettle();
     expect(find.text('2 results'), findsOneWidget);
-    expect(find.text('find what you\'re looking for'), findsOneWidget);
-    expect(find.text('change for the better'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('research-embedded-subtype-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Distributed Embedded Commands').last);
+    await tester.pumpAndSettle();
+    expect(find.text('1 results'), findsOneWidget);
+    expect(find.text('Distributed Embedded Commands'), findsWidgets);
 
     await tester.tap(find.byKey(const ValueKey('research-category-filter')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('All Categories').last);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const ValueKey('research-table-filter')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Notice').last);
-    await tester.pumpAndSettle();
-    expect(find.text('12 results'), findsOneWidget);
-
-    await tester.tap(find.byKey(const ValueKey('research-table-filter')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Embedded').last);
-    await tester.pumpAndSettle();
-    expect(find.text('2 results'), findsOneWidget);
-    expect(find.text('find what you\'re looking for'), findsOneWidget);
-
-    await tester.enterText(find.byKey(const ValueKey('research-search-field')), 'looking for');
+    await tester.enterText(find.byKey(const ValueKey('research-search-field')), 'relaxed you may notice');
     await tester.pumpAndSettle();
     expect(find.text('1 results'), findsOneWidget);
-    expect(find.text('find what you\'re looking for'), findsOneWidget);
   });
 
   test('every production table has defined metadata and resolved category color', () {

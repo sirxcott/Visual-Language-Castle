@@ -84,6 +84,17 @@ const languageTables = <LanguageTable>[
     cards: [
       LanguageCard(id: 'embedded-1', text: 'find what you\'re looking for', category: CardCategory.embedded, tableName: 'Embedded'),
       LanguageCard(id: 'embedded-2', text: 'change for the better', category: CardCategory.embedded, tableName: 'Embedded'),
+      LanguageCard(
+        id: 'embedded-3',
+        text: 'close your eyes ... go into trance ... slip into trance',
+        category: CardCategory.embedded,
+        tableName: 'Embedded',
+        referenceNote: 'Distributed embedded command pattern across carrier passage.',
+        passage: 'as you become more and more relaxed you may notice an increase in how difficult it is to keep your eyes from closing, and it may reach a point where you really want to close your eyes, but I don\'t want you to close them until you\'re ready to go into trance, so I\'d like you to try and keep them open until you\'re ready no matter how difficult it becomes to do so, not until you\'re ready to slip into trance.',
+        fragments: ['close your eyes', 'close them', 'go into trance', 'slip into trance'],
+        reconstructedIntent: 'close your eyes ... go into trance ... slip into trance',
+        isResearchOnly: true,
+      ),
     ],
   ),
   LanguageTable(

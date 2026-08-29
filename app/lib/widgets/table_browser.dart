@@ -25,6 +25,7 @@ class TableBrowser extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mobile = MediaQuery.sizeOf(context).width < 700;
+    final wallCards = table.cards.where((card) => !card.isResearchOnly).toList();
     return Container(
       width: 270,
       decoration: const BoxDecoration(
@@ -70,9 +71,9 @@ class TableBrowser extends StatelessWidget {
           Expanded(
             child: ListView.separated(
               padding: EdgeInsets.fromLTRB(14, 0, 14, mobile ? 10 : 20),
-              itemCount: table.cards.length,
+              itemCount: wallCards.length,
               separatorBuilder: (_, index) => const SizedBox(height: 9),
-              itemBuilder: (context, index) => LanguageCardTile(card: table.cards[index], onAddToWall: onAddCard == null ? null : () => onAddCard!(table.cards[index])),
+              itemBuilder: (context, index) => LanguageCardTile(card: wallCards[index], onAddToWall: onAddCard == null ? null : () => onAddCard!(wallCards[index])),
             ),
           ),
           Padding(

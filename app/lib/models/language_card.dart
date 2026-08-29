@@ -80,6 +80,10 @@ class LanguageCard {
     required this.category,
     required this.tableName,
     this.referenceNote = '',
+    this.passage = '',
+    this.fragments = const [],
+    this.reconstructedIntent = '',
+    this.isResearchOnly = false,
   });
 
   final String id;
@@ -87,6 +91,10 @@ class LanguageCard {
   final CardCategory category;
   final String tableName;
   final String referenceNote;
+  final String passage;
+  final List<String> fragments;
+  final String reconstructedIntent;
+  final bool isResearchOnly;
 }
 
 class WorkspaceCard {

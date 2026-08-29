@@ -41,3 +41,29 @@ LinkageSubtype? linkageSubtypeFor(LanguageCard card) {
 }
 
 String linkageSubtypeLabel(LanguageCard card) => linkageSubtypeFor(card)?.label ?? 'Unclassified';
+
+enum EmbeddedSubtype {
+  intact,
+  distributed,
+}
+
+extension EmbeddedSubtypeDetails on EmbeddedSubtype {
+  String get label {
+    switch (this) {
+      case EmbeddedSubtype.intact:
+        return 'Intact Embedded Commands';
+      case EmbeddedSubtype.distributed:
+        return 'Distributed Embedded Commands';
+    }
+  }
+}
+
+EmbeddedSubtype? embeddedSubtypeFor(LanguageCard card) {
+  if (card.tableName != 'Embedded' && card.category != CardCategory.embedded) return null;
+  if (card.passage.isNotEmpty || card.fragments.isNotEmpty) {
+    return EmbeddedSubtype.distributed;
+  }
+  return EmbeddedSubtype.intact;
+}
+
+String embeddedSubtypeLabel(LanguageCard card) => embeddedSubtypeFor(card)?.label ?? 'Unclassified';
