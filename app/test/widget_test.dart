@@ -559,7 +559,7 @@ void main() {
 
   testWidgets('Research results show Linkage subtype status and filtered count', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
-    expect(find.text('101 results'), findsOneWidget);
+    expect(find.text('113 results'), findsOneWidget);
     expect(find.text('Restatement Linkages'), findsNWidgets(6));
     expect(find.text('Momentum Linkages'), findsNWidgets(4));
     expect(find.text('Unclassified'), findsNWidgets(5));
@@ -589,7 +589,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Reset research filters'));
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.text('101 results'), findsOneWidget);
+    expect(find.text('113 results'), findsOneWidget);
     expect(find.text('or should I say'), findsOneWidget);
     expect(find.text('Unclassified'), findsNWidgets(5));
     expect(tester.widget<TextField>(find.byKey(const ValueKey('research-search-field'))).controller!.text, isEmpty);
@@ -615,7 +615,7 @@ void main() {
     await tester.tap(find.text('All Tables').last);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('research-linkage-subtype-filter')), findsOneWidget);
-    expect(find.text('101 results'), findsOneWidget);
+    expect(find.text('113 results'), findsOneWidget);
   });
 
   testWidgets('Research details show the confirmed Linkage subtype', (WidgetTester tester) async {
@@ -953,8 +953,67 @@ void main() {
     expect(find.text('1 results'), findsOneWidget);
   });
 
+  test('Deepeners exists as a distinct Table with 12 confirmed cards', () {
+    final tablesByName = {for (final table in languageTables) table.name: table};
+    expect(tablesByName, contains('Deepeners'));
+
+    final deepenersTable = tablesByName['Deepeners']!;
+    expect(deepenersTable.cards, hasLength(12));
+
+    final expectedTexts = [
+      'deeply relax',
+      'deepen your relaxation',
+      'begin to thoroughly immerse yourself in the experience',
+      'notice how deeply you\'re sinking into trance',
+      'sink all the way down to the next level of trance',
+      'sink twice as deep',
+      'double your relaxation',
+      'twice as relaxed now',
+      'every time you ___, you sink twice as deep',
+      'as you continue to sink deeper and deeper',
+      'sinking further now, doubling your relaxation every time',
+      'continue to relax, diving twice as deep now',
+    ];
+
+    for (var i = 0; i < 12; i++) {
+      expect(deepenersTable.cards[i].id, 'deepener-${i + 1}');
+      expect(deepenersTable.cards[i].text, expectedTexts[i]);
+      expect(deepenersTable.cards[i].category, CardCategory.deepener);
+      expect(deepenersTable.cards[i].tableName, 'Deepeners');
+    }
+
+    final allTexts = deepenersTable.cards.map((c) => c.text).toList();
+    expect(allTexts, isNot(contains('completely relax')));
+    expect(allTexts, isNot(contains('relax completely')));
+    expect(allTexts, isNot(contains('That\'s right')));
+
+    expect(CardCategory.deepener.label, 'Deepener');
+    expect(CardCategory.deepener.color, const Color(0xFF632050));
+  });
+
+  testWidgets('Research Laboratory filters and searches Deepeners', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
+
+    await tester.tap(find.byKey(const ValueKey('research-table-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Deepeners').last);
+    await tester.pumpAndSettle();
+    expect(find.text('12 results'), findsOneWidget);
+    expect(find.text('deeply relax'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('research-category-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Deepener').last);
+    await tester.pumpAndSettle();
+    expect(find.text('12 results'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const ValueKey('research-search-field')), 'twice as');
+    await tester.pumpAndSettle();
+    expect(find.text('4 results'), findsOneWidget);
+  });
+
   test('every production table has defined metadata and resolved category color', () {
-    expect(languageTables, hasLength(10));
+    expect(languageTables, hasLength(11));
     for (final table in languageTables) {
       expect(table.name, isNotEmpty);
       expect(table.cards, isNotEmpty);
@@ -1030,10 +1089,9 @@ void main() {
       await tester.tap(find.byTooltip('Next table (D)'));
       await tester.pump();
     }
-    expect(find.text('TRANCE WORDPLAY'), findsOneWidget);
-    expect(find.text('Trance-position'), findsOneWidget);
-    expect(languageTables.last.cards.map((card) => card.text), contains('trance-formation'));
-    expect(languageTables.last.cards.map((card) => card.text), contains('form-uh-trance'));
+    expect(find.text('Deepeners'), findsOneWidget);
+    expect(find.text('deeply relax'), findsOneWidget);
+    expect(languageTables.last.cards.map((card) => card.text), contains('sink twice as deep'));
   });
 
   testWidgets('table guidance explains Nominals and Linkages terminology', (WidgetTester tester) async {

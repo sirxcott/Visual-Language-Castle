@@ -11,6 +11,7 @@ enum CardCategory {
   lightBlue,
   lyModifier,
   tranceWordplay,
+  deepener,
 }
 
 // Legacy display categories are retained while the v1 taxonomy is migrated.
@@ -37,6 +38,8 @@ extension CardCategoryDetails on CardCategory {
         return 'LY Modifier';
       case CardCategory.tranceWordplay:
         return 'Trance Wordplay';
+      case CardCategory.deepener:
+        return 'Deepener';
     }
   }
 
@@ -62,6 +65,9 @@ extension CardCategoryDetails on CardCategory {
         return const Color(0xFF66A6B8);
       case CardCategory.tranceWordplay:
         return const Color(0xFF8D527F);
+      case CardCategory.deepener:
+        // Deep maroon-purple: commands worded to send someone further into trance.
+        return const Color(0xFF632050);
     }
   }
 }

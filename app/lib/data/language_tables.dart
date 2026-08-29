@@ -164,4 +164,21 @@ const languageTables = <LanguageTable>[
       LanguageCard(id: 'trance-16', text: 'Trance-endance', category: CardCategory.tranceWordplay, tableName: 'TRANCE WORDPLAY'),
     ],
   ),
+  LanguageTable(
+    name: 'Deepeners',
+    cards: [
+      LanguageCard(id: 'deepener-1', text: 'deeply relax', category: CardCategory.deepener, tableName: 'Deepeners'),
+      LanguageCard(id: 'deepener-2', text: 'deepen your relaxation', category: CardCategory.deepener, tableName: 'Deepeners'),
+      LanguageCard(id: 'deepener-3', text: 'begin to thoroughly immerse yourself in the experience', category: CardCategory.deepener, tableName: 'Deepeners'),
+      LanguageCard(id: 'deepener-4', text: 'notice how deeply you\'re sinking into trance', category: CardCategory.deepener, tableName: 'Deepeners'),
+      LanguageCard(id: 'deepener-5', text: 'sink all the way down to the next level of trance', category: CardCategory.deepener, tableName: 'Deepeners'),
+      LanguageCard(id: 'deepener-6', text: 'sink twice as deep', category: CardCategory.deepener, tableName: 'Deepeners'),
+      LanguageCard(id: 'deepener-7', text: 'double your relaxation', category: CardCategory.deepener, tableName: 'Deepeners'),
+      LanguageCard(id: 'deepener-8', text: 'twice as relaxed now', category: CardCategory.deepener, tableName: 'Deepeners'),
+      LanguageCard(id: 'deepener-9', text: 'every time you ___, you sink twice as deep', category: CardCategory.deepener, tableName: 'Deepeners'),
+      LanguageCard(id: 'deepener-10', text: 'as you continue to sink deeper and deeper', category: CardCategory.deepener, tableName: 'Deepeners'),
+      LanguageCard(id: 'deepener-11', text: 'sinking further now, doubling your relaxation every time', category: CardCategory.deepener, tableName: 'Deepeners'),
+      LanguageCard(id: 'deepener-12', text: 'continue to relax, diving twice as deep now', category: CardCategory.deepener, tableName: 'Deepeners'),
+    ],
+  ),
 ];
