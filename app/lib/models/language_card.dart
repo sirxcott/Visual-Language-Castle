@@ -144,6 +144,8 @@ LanguageClassification legacyClassificationForCategory(CardCategory category) {
       return LanguageClassification.lyModifier;
     case CardCategory.tranceWordplay:
       return LanguageClassification.tranceWordplay;
+    case CardCategory.deepener:
+      return LanguageClassification.deepener;
   }
 }
 

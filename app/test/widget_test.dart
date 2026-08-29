@@ -559,7 +559,7 @@ void main() {
 
   testWidgets('Research results show Linkage subtype status and filtered count', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
-    expect(find.text('113 results'), findsOneWidget);
+    expect(find.text('120 results'), findsOneWidget);
     expect(find.text('Restatement Linkages'), findsNWidgets(6));
     expect(find.text('Momentum Linkages'), findsNWidgets(4));
     expect(find.text('Unclassified'), findsNWidgets(5));
@@ -589,7 +589,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Reset research filters'));
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.text('113 results'), findsOneWidget);
+    expect(find.text('120 results'), findsOneWidget);
     expect(find.text('or should I say'), findsOneWidget);
     expect(find.text('Unclassified'), findsNWidgets(5));
     expect(tester.widget<TextField>(find.byKey(const ValueKey('research-search-field'))).controller!.text, isEmpty);
@@ -615,7 +615,7 @@ void main() {
     await tester.tap(find.text('All Tables').last);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('research-linkage-subtype-filter')), findsOneWidget);
-    expect(find.text('113 results'), findsOneWidget);
+    expect(find.text('120 results'), findsOneWidget);
   });
 
   testWidgets('Research details show the confirmed Linkage subtype', (WidgetTester tester) async {
@@ -1010,6 +1010,61 @@ void main() {
     await tester.enterText(find.byKey(const ValueKey('research-search-field')), 'twice as');
     await tester.pumpAndSettle();
     expect(find.text('4 results'), findsOneWidget);
+  });
+
+  test('Nominals is formalized and expanded as a unified table', () {
+    final tablesByName = {for (final table in languageTables) table.name: table};
+    expect(tablesByName, contains('Nominals'));
+    expect(tablesByName, contains('Time Binds'));
+
+    final nominalsTable = tablesByName['Nominals']!;
+    final timeBindsTable = tablesByName['Time Binds']!;
+
+    expect(nominalsTable.cards, hasLength(12));
+    final nominalTexts = nominalsTable.cards.map((c) => c.text).toList();
+    expect(nominalTexts, isNot(contains('in a moment')));
+    expect(nominalTexts, containsAll([
+      'the room',
+      'a possibility',
+      'something useful',
+      'your attention',
+      'that feeling',
+      'a deep sense of peace',
+      'your curiosity',
+      'a new understanding',
+      'an internal awareness',
+      'that state of comfort',
+      'a quiet realization',
+      'your inner wisdom',
+    ]));
+
+    expect(nominalsTable.cards.take(5).map((c) => c.id), ['nom-1', 'nom-2', 'nom-3', 'nom-5', 'nom-6']);
+    for (var i = 5; i < 12; i++) {
+      expect(nominalsTable.cards[i].id, 'nom-${i + 2}');
+    }
+    expect(nominalsTable.cards.every((c) => c.category == CardCategory.orange), isTrue);
+    expect(CardCategory.orange.color, const Color(0xFFC96A32));
+
+    expect(timeBindsTable.cards.map((c) => c.text), contains('in a moment'));
+    final timeInAMomentCard = timeBindsTable.cards.firstWhere((c) => c.text == 'in a moment');
+    expect(timeInAMomentCard.id, 'time-8');
+    expect(timeInAMomentCard.category, CardCategory.darkBlue);
+  });
+
+  testWidgets('Research Laboratory filters and searches expanded Nominals', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
+
+    await tester.tap(find.byKey(const ValueKey('research-table-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Nominals').last);
+    await tester.pumpAndSettle();
+    expect(find.text('12 results'), findsOneWidget);
+    expect(find.text('your inner wisdom'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const ValueKey('research-search-field')), 'realization');
+    await tester.pumpAndSettle();
+    expect(find.text('1 results'), findsOneWidget);
+    expect(find.text('a quiet realization'), findsOneWidget);
   });
 
   test('every production table has defined metadata and resolved category color', () {
