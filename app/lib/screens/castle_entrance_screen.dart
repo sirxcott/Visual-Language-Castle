@@ -52,6 +52,10 @@ class _CastleEntranceScreenState extends State<CastleEntranceScreen> with Single
         builder: (context, constraints) {
           final doorHeight = math.min(570.0, constraints.maxHeight * 0.57);
           final doorWidth = math.min(270.0, constraints.maxWidth * 0.22);
+          final mobile = constraints.maxWidth < 600;
+          final mobileDoorWidth = math.min(170.0, (constraints.maxWidth - 40) / 2);
+          final actualDoorWidth = mobile ? mobileDoorWidth : doorWidth;
+          final actualDoorHeight = mobile ? actualDoorWidth * 2.1 : doorHeight;
           final stageWidth = math.min(650.0, constraints.maxWidth * 0.9);
           return Stack(
             fit: StackFit.expand,
@@ -72,15 +76,15 @@ class _CastleEntranceScreenState extends State<CastleEntranceScreen> with Single
                         const SizedBox(height: 28),
                         SizedBox(
                           width: stageWidth,
-                          height: doorHeight,
+                          height: actualDoorHeight,
                           child: AnimatedBuilder(
                             animation: _doorController,
                             builder: (context, child) => Stack(
                               alignment: Alignment.center,
                               children: [
                                 Container(
-                                  width: doorWidth * 2 + 10,
-                                  height: doorHeight + 10,
+                                    width: actualDoorWidth * 2 + 10,
+                                    height: actualDoorHeight + 10,
                                   decoration: BoxDecoration(
                                     color: const Color(0xFF070707),
                                     border: Border.all(color: const Color(0xFF6E5935), width: 3),
@@ -90,8 +94,8 @@ class _CastleEntranceScreenState extends State<CastleEntranceScreen> with Single
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    CastleDoor(side: CastleDoorSide.left, progress: _doorController.value, width: doorWidth, height: doorHeight),
-                                    CastleDoor(side: CastleDoorSide.right, progress: _doorController.value, width: doorWidth, height: doorHeight),
+                                    CastleDoor(side: CastleDoorSide.left, progress: _doorController.value, width: actualDoorWidth, height: actualDoorHeight),
+                                    CastleDoor(side: CastleDoorSide.right, progress: _doorController.value, width: actualDoorWidth, height: actualDoorHeight),
                                   ],
                                 ),
                               ],

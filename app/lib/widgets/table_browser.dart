@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/language_card.dart';
 import '../models/language_table.dart';
 import 'language_card_tile.dart';
 
@@ -11,6 +12,7 @@ class TableBrowser extends StatelessWidget {
     required this.tableCount,
     required this.onPrevious,
     required this.onNext,
+    this.onAddCard,
   });
 
   final LanguageTable table;
@@ -18,9 +20,11 @@ class TableBrowser extends StatelessWidget {
   final int tableCount;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
+  final ValueChanged<LanguageCard>? onAddCard;
 
   @override
   Widget build(BuildContext context) {
+    final mobile = MediaQuery.sizeOf(context).width < 700;
     return Container(
       width: 270,
       decoration: const BoxDecoration(
@@ -31,7 +35,7 @@ class TableBrowser extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 18, 16, 12),
+            padding: EdgeInsets.fromLTRB(20, mobile ? 10 : 18, 16, mobile ? 6 : 12),
             child: Row(
               children: [
                 const Text('TABLE BROWSER', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 2)),
@@ -60,17 +64,17 @@ class TableBrowser extends StatelessWidget {
                 child: IconButton(tooltip: 'Open table guidance', onPressed: () => _showTableGuidance(context), icon: const Icon(Icons.info_outline_rounded, size: 18)),
               ),
             ),
-          const Divider(color: Color(0xFF342F27), height: 20),
+          Divider(color: const Color(0xFF342F27), height: mobile ? 10 : 20),
           Expanded(
             child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(14, 0, 14, 20),
+              padding: EdgeInsets.fromLTRB(14, 0, 14, mobile ? 10 : 20),
               itemCount: table.cards.length,
               separatorBuilder: (_, index) => const SizedBox(height: 9),
-              itemBuilder: (context, index) => LanguageCardTile(card: table.cards[index]),
+              itemBuilder: (context, index) => LanguageCardTile(card: table.cards[index], onAddToWall: onAddCard == null ? null : () => onAddCard!(table.cards[index])),
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.fromLTRB(18, 0, 18, 18),
+          Padding(
+            padding: EdgeInsets.fromLTRB(18, 0, 18, mobile ? 8 : 18),
             child: Text('Drag a card onto the wall.\nA / D changes tables quickly.', style: TextStyle(color: Color(0xFF80796C), fontSize: 11, height: 1.45)),
           ),
         ],

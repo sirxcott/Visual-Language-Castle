@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 
 import '../models/language_card.dart';
 
@@ -9,18 +10,24 @@ class WorkspaceCardTile extends StatelessWidget {
     required this.onPositionChanged,
     required this.onOpenNotes,
     required this.onRemove,
+    this.mobile = false,
     this.connectionMode = false,
     this.isConnectionStart = false,
     this.onSelectForConnection,
+    this.onBringToFront,
+    this.onCycleOverlap,
   });
 
   final WorkspaceCard workspaceCard;
   final ValueChanged<Offset> onPositionChanged;
   final VoidCallback onOpenNotes;
   final VoidCallback onRemove;
+  final bool mobile;
   final bool connectionMode;
   final bool isConnectionStart;
   final VoidCallback? onSelectForConnection;
+  final VoidCallback? onBringToFront;
+  final VoidCallback? onCycleOverlap;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +37,7 @@ class WorkspaceCardTile extends StatelessWidget {
       left: workspaceCard.position.dx,
       top: workspaceCard.position.dy,
       child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 150, maxWidth: 240),
+          constraints: BoxConstraints(minWidth: 150, maxWidth: mobile ? 170 : 240),
           child: Container(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 11),
             decoration: BoxDecoration(
@@ -38,7 +45,13 @@ class WorkspaceCardTile extends StatelessWidget {
               border: Border.all(color: isConnectionStart ? const Color(0xFFF0E6D2) : color.withValues(alpha: 0.85), width: isConnectionStart ? 2 : 1),
               boxShadow: const [BoxShadow(color: Colors.black87, blurRadius: 14, offset: Offset(0, 6))],
             ),
-            child: Column(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              dragStartBehavior: DragStartBehavior.down,
+              onTap: onBringToFront,
+              onLongPress: mobile ? onCycleOverlap : null,
+              onPanUpdate: connectionMode ? null : (details) => onPositionChanged(workspaceCard.position + details.delta),
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
@@ -49,7 +62,6 @@ class WorkspaceCardTile extends StatelessWidget {
                     GestureDetector(
                       onTap: connectionMode ? onSelectForConnection : null,
                       onDoubleTap: onOpenNotes,
-                      onPanUpdate: connectionMode ? null : (details) => onPositionChanged(workspaceCard.position + details.delta),
                       child: Text(card.category.label.toUpperCase(), overflow: TextOverflow.ellipsis, style: TextStyle(color: color, fontSize: 9, letterSpacing: 1.2)),
                     ),
                     const SizedBox(width: 4),
@@ -76,10 +88,10 @@ class WorkspaceCardTile extends StatelessWidget {
                 GestureDetector(
                   onTap: connectionMode ? onSelectForConnection : null,
                   onDoubleTap: onOpenNotes,
-                  onPanUpdate: connectionMode ? null : (details) => onPositionChanged(workspaceCard.position + details.delta),
                   child: Text(card.text, style: const TextStyle(color: Color(0xFFF0E6D2), fontSize: 15, height: 1.25)),
                 ),
               ],
+              ),
             ),
         ),
       ),

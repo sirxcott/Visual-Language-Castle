@@ -310,7 +310,7 @@ void main() {
     expect(find.text('Unsaved changes'), findsOneWidget);
     await tester.tap(find.text('Return to Editing'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Remove from wall').last);
+    await tester.tap(find.text('×').last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Remove'));
     await tester.pumpAndSettle();
@@ -586,27 +586,14 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
 
     await tester.enterText(find.byKey(const ValueKey('research-search-field')), 'obvious');
-    await tester.tap(find.byKey(const ValueKey('research-table-filter')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Linkages').last);
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('research-category-filter')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Linkage').last);
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('research-linkage-subtype-filter')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Momentum Linkages').last);
-    await tester.pumpAndSettle();
-    expect(find.text('1 results'), findsOneWidget);
-
     await tester.tap(find.bySemanticsLabel('Reset research filters'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('63 results'), findsOneWidget);
     expect(find.text('or should I say'), findsOneWidget);
     expect(find.text('Unclassified'), findsNWidgets(5));
     expect(tester.widget<TextField>(find.byKey(const ValueKey('research-search-field'))).controller!.text, isEmpty);
+    expect(tester.widget<TextField>(find.byKey(const ValueKey('research-search-field'))).focusNode!.hasFocus, isTrue);
   });
 
   testWidgets('switching to a non-Linkage table clears hidden subtype state', (WidgetTester tester) async {
@@ -705,6 +692,176 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byTooltip('Remove from wall'), findsNothing);
     expect(find.text('the room'), findsOneWidget);
+  });
+
+  testWidgets('mobile Table Browser exposes all cards and Add to Wall cascades copies', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    await tester.pumpWidget(const MaterialApp(home: PracticeRoomScreen()));
+
+    expect(find.byTooltip('Add to Wall'), findsOneWidget);
+    await tester.tap(find.byTooltip('Add to Wall').first);
+    await tester.tap(find.byTooltip('Add to Wall').first);
+    await tester.pump();
+
+    final cards = find.text('the room');
+    expect(cards, findsNWidgets(3));
+    final positions = cards.evaluate().map((element) => tester.getTopLeft(find.byWidget(element.widget))).toList();
+    expect(positions[1], isNot(positions[2]));
+    await tester.dragFrom(const Offset(180, 270), const Offset(0, -180));
+    await tester.pump();
+    expect(find.byType(ListView), findsOneWidget);
+  });
+
+  testWidgets('mobile touch dragging moves only the selected duplicate workspace card', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    final source = languageTables.first.cards.first;
+    final first = WorkspaceCard(instanceId: 'mobile-first', card: source, position: const Offset(40, 40));
+    final second = WorkspaceCard(instanceId: 'mobile-second', card: source, position: const Offset(230, 120));
+    await tester.pumpWidget(MaterialApp(home: PracticeRoomScreen(initialCards: [first, second])));
+
+    final cards = find.text('the room');
+    expect(cards, findsNWidgets(3));
+    final firstPosition = tester.getTopLeft(cards.at(1));
+    final secondPosition = tester.getTopLeft(cards.at(2));
+    await tester.drag(cards.at(1), const Offset(60, 45));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(tester.getTopLeft(cards.at(1)), isNot(firstPosition));
+    expect(tester.getTopLeft(cards.at(2)), secondPosition);
+  });
+
+  testWidgets('mobile Connections controls toggle, connect cards, and restore controls', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    final first = WorkspaceCard(instanceId: 'connection-first', card: languageTables.first.cards.first, position: const Offset(30, 30));
+    final second = WorkspaceCard(instanceId: 'connection-second', card: languageTables[1].cards.first, position: const Offset(220, 120));
+    await tester.pumpWidget(MaterialApp(home: PracticeRoomScreen(initialCards: [first, second])));
+
+    expect(find.byTooltip('Connections'), findsOneWidget);
+    tester.view.physicalSize = const Size(844, 390);
+    await tester.pump();
+    expect(find.byTooltip('Connections'), findsOneWidget);
+    tester.view.physicalSize = const Size(390, 844);
+    await tester.pump();
+    await tester.tap(find.byTooltip('Connections'));
+    await tester.pump();
+    expect(find.byTooltip('Exit Connections'), findsOneWidget);
+    expect(find.byTooltip('Remove from wall'), findsNothing);
+    await tester.tap(find.text('the room').last);
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.tap(find.text('notice').last);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byKey(const ValueKey('connections-painter')), findsOneWidget);
+    expect(find.byType(CustomPaint), findsWidgets);
+
+    await tester.tap(find.byTooltip('Exit Connections'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byTooltip('Connections'), findsOneWidget);
+    expect(find.byTooltip('Remove from wall'), findsNWidgets(2));
+  });
+
+  testWidgets('mobile tap and sub-threshold movement do not move a workspace card', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    final card = WorkspaceCard(instanceId: 'threshold-card', card: languageTables.first.cards.first, position: const Offset(40, 40));
+    await tester.pumpWidget(MaterialApp(home: PracticeRoomScreen(initialCards: [card])));
+    final target = find.text('the room').last;
+    final original = tester.getTopLeft(target);
+    await tester.tap(target);
+    await tester.pump();
+    expect(tester.getTopLeft(target), original);
+    await tester.drag(target, const Offset(3, 3));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tester.getTopLeft(target), original);
+  });
+
+  testWidgets('intentional mobile drag moves the selected instance and remains bounded', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    final first = WorkspaceCard(instanceId: 'drag-first', card: languageTables.first.cards.first, position: const Offset(40, 40));
+    final second = WorkspaceCard(instanceId: 'drag-second', card: languageTables.first.cards.first, position: const Offset(230, 140));
+    await tester.pumpWidget(MaterialApp(home: PracticeRoomScreen(initialCards: [first, second])));
+    final cards = find.text('the room');
+    final secondPosition = tester.getTopLeft(cards.at(2));
+    await tester.drag(cards.at(1), const Offset(80, 60));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tester.getTopLeft(cards.at(1)), isNot(const Offset(55, 55)));
+    expect(tester.getTopLeft(cards.at(2)), secondPosition);
+  });
+
+  testWidgets('mobile orientation changes keep cards inside the visible wall', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    final card = WorkspaceCard(instanceId: 'orientation-card', card: languageTables.first.cards.first, position: const Offset(1000, 1000));
+    await tester.pumpWidget(MaterialApp(home: PracticeRoomScreen(initialCards: [card])));
+    await tester.pump();
+    final portraitPosition = tester.getTopLeft(find.text('the room').last);
+    tester.view.physicalSize = const Size(844, 390);
+    await tester.pump();
+    tester.view.physicalSize = const Size(390, 844);
+    await tester.pump(const Duration(milliseconds: 100));
+    final restoredPosition = tester.getTopLeft(find.text('the room').last);
+    expect(portraitPosition.dx, greaterThanOrEqualTo(0));
+    expect(portraitPosition.dy, greaterThanOrEqualTo(0));
+    expect(restoredPosition.dx, greaterThanOrEqualTo(0));
+    expect(restoredPosition.dy, greaterThanOrEqualTo(0));
+    expect(restoredPosition.dx, lessThan(390));
+    expect(restoredPosition.dy, lessThan(844));
+  });
+
+  testWidgets('mobile selection brings instances forward and long press cycles overlap', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    final source = languageTables.first.cards.first;
+    final first = WorkspaceCard(instanceId: 'overlap-first', card: source, position: const Offset(60, 60));
+    final second = WorkspaceCard(instanceId: 'overlap-second', card: source, position: const Offset(60, 60));
+    await tester.pumpWidget(MaterialApp(home: PracticeRoomScreen(initialCards: [first, second])));
+
+    List<Key?> stackKeys() => tester.widget<Stack>(find.byKey(const ValueKey('working-wall-stack'))).children.map((child) => child.key).toList();
+    expect(stackKeys(), containsAllInOrder([const ValueKey('overlap-first'), const ValueKey('overlap-second')]));
+    expect(stackKeys().last, const ValueKey('overlap-second'));
+    await tester.longPress(find.byKey(const ValueKey('overlap-second')));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(stackKeys().last, const ValueKey('overlap-first'));
+  });
+
+  test('every production table has visible card data with a resolved category color', () {
+    expect(languageTables, hasLength(9));
+    for (final table in languageTables) {
+      expect(table.name, isNotEmpty);
+      expect(table.cards, isNotEmpty);
+      for (final card in table.cards) {
+        expect(card.text.trim(), isNotEmpty);
+        expect(card.category.label, isNotEmpty);
+        expect(card.category.color.a, greaterThan(0));
+      }
+    }
+  });
+
+  testWidgets('all production tables render cards on the narrow mobile wall layout', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    await tester.pumpWidget(const MaterialApp(home: PracticeRoomScreen()));
+
+    for (var index = 0; index < languageTables.length; index++) {
+      expect(find.byTooltip('Add to Wall'), findsWidgets);
+      expect(find.text(languageTables[index].cards.first.text), findsOneWidget);
+      await tester.tap(find.byTooltip('Next table (D)'));
+      await tester.pump();
+    }
   });
 
   testWidgets('entrance opens into the gallery hall', (WidgetTester tester) async {

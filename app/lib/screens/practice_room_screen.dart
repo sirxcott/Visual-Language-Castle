@@ -156,12 +156,54 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
     });
   }
 
-  void _placeCard(LanguageCard card, Offset localPosition) {
+  void _placeCard(LanguageCard card, Offset localPosition, {bool mobile = false}) {
+    final cascade = mobile
+        ? Offset((_workspaceCards.length % 2) * 170.0, (_workspaceCards.length ~/ 2) * 100.0)
+        : Offset(_workspaceCards.length * 24.0, _workspaceCards.length * 24.0);
     final position = Offset(
-      (localPosition.dx - 100).clamp(12.0, double.infinity),
-      (localPosition.dy - 40).clamp(12.0, double.infinity),
+      (localPosition.dx - 100 + cascade.dx).clamp(12.0, double.infinity),
+      (localPosition.dy - 40 + cascade.dy).clamp(12.0, double.infinity),
     );
     setState(() => _workspaceCards.add(WorkspaceCard(card: card, position: position)));
+  }
+
+  void _addCardToWall(LanguageCard card) => _placeCard(card, const Offset(112, 52), mobile: true);
+
+  void _bringCardToFront(WorkspaceCard card) {
+    setState(() {
+      _workspaceCards.removeWhere((item) => item.instanceId == card.instanceId);
+      _workspaceCards.add(card);
+    });
+  }
+
+  void _cycleOverlap(WorkspaceCard card) {
+    final overlapping = _workspaceCards.where((item) => (item.position - card.position).distance < 24).toList();
+    if (overlapping.length < 2) return;
+    final next = overlapping.firstWhere((item) => item.instanceId != card.instanceId, orElse: () => card);
+    _bringCardToFront(next);
+  }
+
+  Offset _clampCardPosition(Offset position, BoxConstraints constraints) {
+    return Offset(
+      position.dx.clamp(12.0, (constraints.maxWidth - 180).clamp(12.0, double.infinity)),
+      position.dy.clamp(12.0, (constraints.maxHeight - 88).clamp(12.0, double.infinity)),
+    );
+  }
+
+  void _clampWorkspaceCards(BoxConstraints constraints) {
+    var changed = false;
+    for (final card in _workspaceCards) {
+      final clamped = _clampCardPosition(card.position, constraints);
+      if (clamped != card.position) {
+        card.position = clamped;
+        changed = true;
+      }
+    }
+    if (changed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+    }
   }
 
   void _toggleConnectionMode() {
@@ -271,24 +313,19 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
             children: [
               _RoomHeader(onBack: _requestExit, onSave: _saveToArchive, onUpdate: widget.sourceWork == null ? null : _updateArchive, connectionMode: _connectionMode, onToggleConnections: _toggleConnectionMode),
               Expanded(
-                child: Row(
-                  children: [
-                    TableBrowser(
-                      table: table,
-                      tableIndex: _tableIndex,
-                      tableCount: languageTables.length,
-                      onPrevious: () => _changeTable(-1),
-                      onNext: () => _changeTable(1),
-                    ),
-                    Expanded(
-                      child: DragTarget<LanguageCard>(
+                child: LayoutBuilder(
+                  builder: (context, roomConstraints) {
+                    final wall = DragTarget<LanguageCard>(
                         onAcceptWithDetails: (details) {
                           final box = context.findRenderObject() as RenderBox;
                           _placeCard(details.data, box.globalToLocal(details.offset));
                         },
                         builder: (context, candidateData, rejectedData) {
                           return LayoutBuilder(
-                            builder: (context, constraints) => Stack(
+                            builder: (context, constraints) {
+                              _clampWorkspaceCards(constraints);
+                              return Stack(
+                              key: const ValueKey('working-wall-stack'),
                               fit: StackFit.expand,
                               children: [
                                 const _WorkspaceBackdrop(),
@@ -296,7 +333,7 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
                                   child: GestureDetector(
                                     behavior: HitTestBehavior.translucent,
                                     onTapUp: (details) => _removeConnectionAt(details.localPosition),
-                                    child: CustomPaint(painter: _ConnectionsPainter(cards: _workspaceCards, connections: _connections)),
+                                    child: CustomPaint(key: const ValueKey('connections-painter'), painter: _ConnectionsPainter(cards: _workspaceCards, connections: _connections)),
                                   ),
                                 ),
                                 if (_workspaceCards.isEmpty) const _EmptyWorkspaceHint(),
@@ -305,21 +342,29 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
                                   (workspaceCard) => WorkspaceCardTile(
                                     key: ValueKey(workspaceCard.instanceId),
                                     workspaceCard: workspaceCard,
-                                    onPositionChanged: (position) => setState(() => workspaceCard.position = position),
+                                    mobile: roomConstraints.maxWidth < 700,
+                                    onPositionChanged: (position) => setState(() => workspaceCard.position = _clampCardPosition(position, constraints)),
                                     onOpenNotes: () => _editNotes(workspaceCard),
                                     onRemove: () => _removeCard(workspaceCard),
                                     connectionMode: _connectionMode,
                                     isConnectionStart: _connectionStartId == workspaceCard.instanceId,
                                     onSelectForConnection: () => _selectCardForConnection(workspaceCard),
+                                    onBringToFront: () => _bringCardToFront(workspaceCard),
+                                    onCycleOverlap: () => _cycleOverlap(workspaceCard),
                                   ),
                                 ),
                               ],
-                            ),
+                              );
+                            },
                           );
                         },
-                      ),
-                    ),
-                  ],
+                      );
+                    if (roomConstraints.maxWidth < 700) {
+                      final browserHeight = (roomConstraints.maxHeight * 0.30).clamp(220.0, 300.0);
+                      return Column(children: [SizedBox(height: browserHeight, width: double.infinity, child: TableBrowser(table: table, tableIndex: _tableIndex, tableCount: languageTables.length, onPrevious: () => _changeTable(-1), onNext: () => _changeTable(1), onAddCard: _addCardToWall)), Expanded(child: wall)]);
+                    }
+                    return Row(children: [TableBrowser(table: table, tableIndex: _tableIndex, tableCount: languageTables.length, onPrevious: () => _changeTable(-1), onNext: () => _changeTable(1), onAddCard: _addCardToWall), Expanded(child: wall)]);
+                  },
                 ),
               ),
             ],
@@ -454,14 +499,16 @@ class _RoomHeader extends StatelessWidget {
         children: [
           IconButton(tooltip: 'Return to Gallery Hall', onPressed: onBack, icon: const Icon(Icons.arrow_back_rounded)),
           const SizedBox(width: 8),
-          const Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('PRACTICE ROOM', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 2.5)),
-              SizedBox(height: 3),
-              Text('The Working Wall', style: TextStyle(color: Color(0xFFF0E6D2), fontSize: 20)),
-            ],
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('PRACTICE ROOM', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 2.5)),
+                const SizedBox(height: 3),
+                Text('The Working Wall', overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFF0E6D2), fontSize: 20)),
+              ],
+            ),
           ),
           const Spacer(),
           if (compact)

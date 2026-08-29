@@ -117,22 +117,20 @@ class _CompletedWorkItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: BoxDecoration(color: const Color(0xFF151718), border: Border.all(color: const Color(0xFF645238))),
-      child: Row(
-        children: [
-          const Icon(Icons.collections_bookmark_outlined, color: Color(0xFFC09A52), size: 28),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final details = Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(work.name, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFE0D3B8), fontSize: 17)),
                 const SizedBox(height: 5),
                 Text('$completionDate  ·  ${work.cards.length} cards  ·  ${work.connections.length} ${work.connections.length == 1 ? 'connection' : 'connections'}', style: const TextStyle(color: Color(0xFF80796C), fontSize: 12)),
               ],
-            ),
-          ),
-          IconButton(tooltip: 'Open ${work.name}', onPressed: onOpen, icon: const Icon(Icons.open_in_new_rounded)),
-        ],
+            );
+          final action = IconButton(tooltip: 'Open ${work.name}', onPressed: onOpen, icon: const Icon(Icons.open_in_new_rounded));
+          if (constraints.maxWidth < 620) return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [const Icon(Icons.collections_bookmark_outlined, color: Color(0xFFC09A52), size: 28), const SizedBox(width: 14), Expanded(child: details)]), Align(alignment: Alignment.centerRight, child: action)]);
+          return Row(children: [const Icon(Icons.collections_bookmark_outlined, color: Color(0xFFC09A52), size: 28), const SizedBox(width: 14), Expanded(child: details), action]);
+        },
       ),
     );
   }
