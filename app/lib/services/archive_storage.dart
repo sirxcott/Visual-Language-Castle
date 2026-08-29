@@ -112,11 +112,32 @@ class ArchiveStorage {
         final card = workspaceCard.card;
         return {
           'id': card.id,
-            'instanceId': workspaceCard.instanceId,
+          'instanceId': workspaceCard.instanceId,
           'text': card.text,
           'category': card.category.name,
           'tableName': card.tableName,
           'referenceNote': card.referenceNote,
+          'passage': card.passage,
+          'fragments': card.fragments,
+          'reconstructedIntent': card.reconstructedIntent,
+          'isResearchOnly': card.isResearchOnly,
+          'primaryClassification': card.primaryClassification?.name,
+          'secondaryClassifications': card.secondaryClassifications.map((item) => item.name).toList(),
+          'visibleSubtype': card.visibleSubtype,
+          'internalSubtypes': card.internalSubtypes,
+          'definition': card.definition,
+          'primaryFunction': card.primaryFunction,
+          'teachingExamples': card.teachingExamples,
+          'usageNotes': card.usageNotes,
+          'referenceNoteIds': card.referenceNoteIds,
+          'segments': card.segments.map((segment) => {
+            'text': segment.text,
+            'classification': segment.classification.name,
+            'subtype': segment.subtype,
+            'order': segment.order,
+          }).toList(),
+          'relatedCardIds': card.relatedCardIds,
+          'taxonomyVersion': card.taxonomyVersion,
           'notes': workspaceCard.notes,
           'x': workspaceCard.position.dx,
           'y': workspaceCard.position.dy,
@@ -131,12 +152,51 @@ class ArchiveStorage {
     };
   }
 
-CardCategory _parseCategory(String name) {
-  if (name == 'yellow' || name == 'noticing' || name == 'notice') {
-    return CardCategory.notice;
+  CardCategory _parseCategory(String name) {
+    if (name == 'yellow' || name == 'noticing' || name == 'notice') {
+      return CardCategory.notice;
+    }
+    return CardCategory.values.byName(name);
   }
-  return CardCategory.values.byName(name);
-}
+
+  LanguageClassification? _parseClassification(Object? value) {
+    if (value is! String || value.isEmpty) return null;
+    for (final classification in LanguageClassification.values) {
+      if (classification.name == value) return classification;
+    }
+    return null;
+  }
+
+  List<LanguageClassification> _parseClassifications(Object? value) {
+    if (value is! List<dynamic>) return const [];
+    return value
+        .map(_parseClassification)
+        .whereType<LanguageClassification>()
+        .toList(growable: false);
+  }
+
+  List<String> _parseStrings(Object? value) {
+    if (value is! List<dynamic>) return const [];
+    return value.whereType<String>().toList(growable: false);
+  }
+
+  List<LanguageSegment> _parseSegments(Object? value) {
+    if (value is! List<dynamic>) return const [];
+    final segments = <LanguageSegment>[];
+    for (final item in value) {
+      if (item is! Map<String, dynamic>) continue;
+      final text = item['text'];
+      final classification = _parseClassification(item['classification']);
+      if (text is! String || classification == null) continue;
+      segments.add(LanguageSegment(
+        text: text,
+        classification: classification,
+        subtype: item['subtype'] is String ? item['subtype'] as String : '',
+        order: item['order'] is num ? (item['order'] as num).toInt() : segments.length,
+      ));
+    }
+    return segments;
+  }
 
   ArchivedWork _fromJson(Map<String, dynamic> json) {
     final archiveId = json['id'] as String;
@@ -154,9 +214,21 @@ CardCategory _parseCategory(String name) {
           tableName: card['tableName'] as String,
           referenceNote: card['referenceNote'] as String? ?? '',
           passage: card['passage'] as String? ?? '',
-          fragments: (card['fragments'] as List<dynamic>?)?.cast<String>() ?? const [],
+          fragments: _parseStrings(card['fragments']),
           reconstructedIntent: card['reconstructedIntent'] as String? ?? '',
           isResearchOnly: card['isResearchOnly'] as bool? ?? false,
+          primaryClassification: _parseClassification(card['primaryClassification']),
+          secondaryClassifications: _parseClassifications(card['secondaryClassifications']),
+          visibleSubtype: card['visibleSubtype'] as String? ?? '',
+          internalSubtypes: _parseStrings(card['internalSubtypes']),
+          definition: card['definition'] as String? ?? '',
+          primaryFunction: card['primaryFunction'] as String? ?? '',
+          teachingExamples: _parseStrings(card['teachingExamples']),
+          usageNotes: card['usageNotes'] as String? ?? '',
+          referenceNoteIds: _parseStrings(card['referenceNoteIds']),
+          segments: _parseSegments(card['segments']),
+          relatedCardIds: _parseStrings(card['relatedCardIds']),
+          taxonomyVersion: card['taxonomyVersion'] as String? ?? '1.0',
         ),
         notes: card['notes'] as String? ?? '',
         position: Offset((card['x'] as num).toDouble(), (card['y'] as num).toDouble()),
