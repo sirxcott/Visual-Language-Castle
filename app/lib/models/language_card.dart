@@ -13,9 +13,7 @@ enum CardCategory {
   tranceWordplay,
 }
 
-// Tables contain categories; a phrase may overlap categories when it serves
-// multiple functions. These blue-family colors describe the current practical
-// model and are intentionally provisional rather than academic taxonomy.
+// Legacy display categories are retained while the v1 taxonomy is migrated.
 extension CardCategoryDetails on CardCategory {
   String get label {
     switch (this) {
@@ -53,24 +51,109 @@ extension CardCategoryDetails on CardCategory {
       case CardCategory.red:
         return const Color(0xFFB94D4B);
       case CardCategory.notice:
-        // Bright yellow: Notice Statements / Notice Commands that direct attention.
         return const Color(0xFFD4A325);
       case CardCategory.embedded:
-        // Muted/dull yellow: Embedded Commands hidden or distributed inside sentences.
         return const Color(0xFF8F8140);
       case CardCategory.darkBlue:
-        // Standard blue: temporal structures that locate or bind events.
         return const Color(0xFF466D9E);
       case CardCategory.lightBlue:
-        // Dark blue: a condition leading to an implied result.
         return const Color(0xFF7893C7);
       case CardCategory.lyModifier:
-        // Light blue: ongoing process and current moment experience.
         return const Color(0xFF66A6B8);
       case CardCategory.tranceWordplay:
         return const Color(0xFF8D527F);
     }
   }
+}
+
+/// Stable semantic classifications for Language Taxonomy v1.0.
+///
+/// These are separate from [CardCategory] so the existing UI can continue to
+/// use its legacy color categories while cards are migrated incrementally.
+enum LanguageClassification {
+  nominal,
+  verb,
+  linkage,
+  complianceCommand,
+  complianceSet,
+  notice,
+  embeddedCommand,
+  deepener,
+  timeBind,
+  causeAndEffect,
+  lyModifier,
+  tranceWordplay,
+}
+
+extension LanguageClassificationDetails on LanguageClassification {
+  String get label {
+    switch (this) {
+      case LanguageClassification.nominal:
+        return 'Nominal';
+      case LanguageClassification.verb:
+        return 'Verb';
+      case LanguageClassification.linkage:
+        return 'Linkage';
+      case LanguageClassification.complianceCommand:
+        return 'Compliance Command';
+      case LanguageClassification.complianceSet:
+        return 'Compliance Set';
+      case LanguageClassification.notice:
+        return 'Notice';
+      case LanguageClassification.embeddedCommand:
+        return 'Embedded Command';
+      case LanguageClassification.deepener:
+        return 'Deepener';
+      case LanguageClassification.timeBind:
+        return 'Time Bind';
+      case LanguageClassification.causeAndEffect:
+        return 'Cause and Effect';
+      case LanguageClassification.lyModifier:
+        return 'LY Modifier';
+      case LanguageClassification.tranceWordplay:
+        return 'Trance Wordplay';
+    }
+  }
+}
+
+LanguageClassification legacyClassificationForCategory(CardCategory category) {
+  switch (category) {
+    case CardCategory.orange:
+      return LanguageClassification.nominal;
+    case CardCategory.pink:
+      return LanguageClassification.verb;
+    case CardCategory.green:
+      return LanguageClassification.linkage;
+    case CardCategory.red:
+      return LanguageClassification.complianceSet;
+    case CardCategory.notice:
+      return LanguageClassification.notice;
+    case CardCategory.embedded:
+      return LanguageClassification.embeddedCommand;
+    case CardCategory.darkBlue:
+      return LanguageClassification.timeBind;
+    case CardCategory.lightBlue:
+      return LanguageClassification.causeAndEffect;
+    case CardCategory.lyModifier:
+      return LanguageClassification.lyModifier;
+    case CardCategory.tranceWordplay:
+      return LanguageClassification.tranceWordplay;
+  }
+}
+
+/// Exact classified span inside a larger phrase or carrier passage.
+class LanguageSegment {
+  const LanguageSegment({
+    required this.text,
+    required this.classification,
+    this.subtype = '',
+    this.order = 0,
+  });
+
+  final String text;
+  final LanguageClassification classification;
+  final String subtype;
+  final int order;
 }
 
 class LanguageCard {
@@ -84,10 +167,24 @@ class LanguageCard {
     this.fragments = const [],
     this.reconstructedIntent = '',
     this.isResearchOnly = false,
+    this.primaryClassification,
+    this.secondaryClassifications = const [],
+    this.visibleSubtype = '',
+    this.internalSubtypes = const [],
+    this.definition = '',
+    this.primaryFunction = '',
+    this.teachingExamples = const [],
+    this.usageNotes = '',
+    this.referenceNoteIds = const [],
+    this.segments = const [],
+    this.relatedCardIds = const [],
+    this.taxonomyVersion = '1.0',
   });
 
   final String id;
   final String text;
+
+  // Legacy fields retained until the current corpus/UI migration is complete.
   final CardCategory category;
   final String tableName;
   final String referenceNote;
@@ -95,6 +192,28 @@ class LanguageCard {
   final List<String> fragments;
   final String reconstructedIntent;
   final bool isResearchOnly;
+
+  // Language Taxonomy v1.0 metadata.
+  final LanguageClassification? primaryClassification;
+  final List<LanguageClassification> secondaryClassifications;
+  final String visibleSubtype;
+  final List<String> internalSubtypes;
+  final String definition;
+  final String primaryFunction;
+  final List<String> teachingExamples;
+  final String usageNotes;
+  final List<String> referenceNoteIds;
+  final List<LanguageSegment> segments;
+  final List<String> relatedCardIds;
+  final String taxonomyVersion;
+
+  LanguageClassification get effectivePrimaryClassification =>
+      primaryClassification ?? legacyClassificationForCategory(category);
+
+  bool hasClassification(LanguageClassification classification) =>
+      effectivePrimaryClassification == classification ||
+      secondaryClassifications.contains(classification) ||
+      segments.any((segment) => segment.classification == classification);
 }
 
 class WorkspaceCard {
