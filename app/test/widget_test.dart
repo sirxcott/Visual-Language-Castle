@@ -559,7 +559,7 @@ void main() {
 
   testWidgets('Research results show Linkage subtype status and filtered count', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
-    expect(find.text('98 results'), findsOneWidget);
+    expect(find.text('100 results'), findsOneWidget);
     expect(find.text('Restatement Linkages'), findsNWidgets(6));
     expect(find.text('Momentum Linkages'), findsNWidgets(4));
     expect(find.text('Unclassified'), findsNWidgets(5));
@@ -589,7 +589,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Reset research filters'));
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.text('98 results'), findsOneWidget);
+    expect(find.text('100 results'), findsOneWidget);
     expect(find.text('or should I say'), findsOneWidget);
     expect(find.text('Unclassified'), findsNWidgets(5));
     expect(tester.widget<TextField>(find.byKey(const ValueKey('research-search-field'))).controller!.text, isEmpty);
@@ -615,7 +615,7 @@ void main() {
     await tester.tap(find.text('All Tables').last);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('research-linkage-subtype-filter')), findsOneWidget);
-    expect(find.text('98 results'), findsOneWidget);
+    expect(find.text('100 results'), findsOneWidget);
   });
 
   testWidgets('Research details show the confirmed Linkage subtype', (WidgetTester tester) async {
@@ -895,7 +895,10 @@ void main() {
     ]));
     expect(noticeTable.cards.every((c) => c.category == CardCategory.notice), isTrue);
 
-    expect(embeddedTable.cards, isEmpty);
+    expect(embeddedTable.cards, hasLength(2));
+    expect(embeddedTable.cards.map((c) => c.id), ['embedded-1', 'embedded-2']);
+    expect(embeddedTable.cards.map((c) => c.text), ['find what you\'re looking for', 'change for the better']);
+    expect(embeddedTable.cards.every((c) => c.category == CardCategory.embedded), isTrue);
 
     expect(CardCategory.notice.label, 'Notice');
     expect(CardCategory.embedded.label, 'Embedded');
@@ -920,7 +923,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Embedded').last);
     await tester.pumpAndSettle();
-    expect(find.text('0 results'), findsOneWidget);
+    expect(find.text('2 results'), findsOneWidget);
+    expect(find.text('find what you\'re looking for'), findsOneWidget);
+    expect(find.text('change for the better'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('research-category-filter')));
     await tester.pumpAndSettle();
@@ -937,22 +942,24 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Embedded').last);
     await tester.pumpAndSettle();
-    expect(find.text('0 results'), findsOneWidget);
+    expect(find.text('2 results'), findsOneWidget);
+    expect(find.text('find what you\'re looking for'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const ValueKey('research-search-field')), 'looking for');
+    await tester.pumpAndSettle();
+    expect(find.text('1 results'), findsOneWidget);
+    expect(find.text('find what you\'re looking for'), findsOneWidget);
   });
 
   test('every production table has defined metadata and resolved category color', () {
     expect(languageTables, hasLength(10));
     for (final table in languageTables) {
       expect(table.name, isNotEmpty);
-      if (table.name == 'Embedded') {
-        expect(table.cards, isEmpty);
-      } else {
-        expect(table.cards, isNotEmpty);
-        for (final card in table.cards) {
-          expect(card.text.trim(), isNotEmpty);
-          expect(card.category.label, isNotEmpty);
-          expect(card.category.color.a, greaterThan(0));
-        }
+      expect(table.cards, isNotEmpty);
+      for (final card in table.cards) {
+        expect(card.text.trim(), isNotEmpty);
+        expect(card.category.label, isNotEmpty);
+        expect(card.category.color.a, greaterThan(0));
       }
     }
   });

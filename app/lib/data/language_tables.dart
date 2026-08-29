@@ -81,7 +81,10 @@ const languageTables = <LanguageTable>[
   ),
   LanguageTable(
     name: 'Embedded',
-    cards: [],
+    cards: [
+      LanguageCard(id: 'embedded-1', text: 'find what you\'re looking for', category: CardCategory.embedded, tableName: 'Embedded'),
+      LanguageCard(id: 'embedded-2', text: 'change for the better', category: CardCategory.embedded, tableName: 'Embedded'),
+    ],
   ),
   LanguageTable(
     name: 'Time Binds',
