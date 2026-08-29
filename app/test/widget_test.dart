@@ -559,7 +559,7 @@ void main() {
 
   testWidgets('Research results show Linkage subtype status and filtered count', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
-    expect(find.text('90 results'), findsOneWidget);
+    expect(find.text('98 results'), findsOneWidget);
     expect(find.text('Restatement Linkages'), findsNWidgets(6));
     expect(find.text('Momentum Linkages'), findsNWidgets(4));
     expect(find.text('Unclassified'), findsNWidgets(5));
@@ -589,7 +589,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Reset research filters'));
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.text('90 results'), findsOneWidget);
+    expect(find.text('98 results'), findsOneWidget);
     expect(find.text('or should I say'), findsOneWidget);
     expect(find.text('Unclassified'), findsNWidgets(5));
     expect(tester.widget<TextField>(find.byKey(const ValueKey('research-search-field'))).controller!.text, isEmpty);
@@ -615,7 +615,7 @@ void main() {
     await tester.tap(find.text('All Tables').last);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('research-linkage-subtype-filter')), findsOneWidget);
-    expect(find.text('90 results'), findsOneWidget);
+    expect(find.text('98 results'), findsOneWidget);
   });
 
   testWidgets('Research details show the confirmed Linkage subtype', (WidgetTester tester) async {
@@ -877,8 +877,22 @@ void main() {
     final noticeTable = tablesByName['Notice']!;
     final embeddedTable = tablesByName['Embedded']!;
 
-    expect(noticeTable.cards, hasLength(4));
-    expect(noticeTable.cards.map((c) => c.id), ['notice-1', 'notice-2', 'notice-3', 'notice-4']);
+    expect(noticeTable.cards, hasLength(12));
+    expect(noticeTable.cards.take(4).map((c) => c.id), ['notice-1', 'notice-2', 'notice-3', 'notice-4']);
+    expect(noticeTable.cards.map((c) => c.text), containsAll([
+      'you may notice',
+      'you can begin to',
+      'as you become aware',
+      'it is interesting to notice',
+      'be aware',
+      'become aware',
+      'observe',
+      'focus on',
+      'concentrate on',
+      'notice how',
+      'become conscious of',
+      'pay attention to',
+    ]));
     expect(noticeTable.cards.every((c) => c.category == CardCategory.notice), isTrue);
 
     expect(embeddedTable.cards, isEmpty);
@@ -898,8 +912,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Notice').last);
     await tester.pumpAndSettle();
-    expect(find.text('4 results'), findsOneWidget);
+    expect(find.text('12 results'), findsOneWidget);
     expect(find.text('you may notice'), findsOneWidget);
+    expect(find.text('be aware'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('research-category-filter')));
     await tester.pumpAndSettle();
@@ -916,7 +931,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Notice').last);
     await tester.pumpAndSettle();
-    expect(find.text('4 results'), findsOneWidget);
+    expect(find.text('12 results'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('research-table-filter')));
     await tester.pumpAndSettle();
