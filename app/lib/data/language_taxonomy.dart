@@ -148,6 +148,10 @@ const _restatementLinkages = {
 };
 
 const _momentumLinkages = {
+  'and',
+  'because',
+  'as',
+  'while',
   "and if that's the case",
   'and as a result',
   'of course',
