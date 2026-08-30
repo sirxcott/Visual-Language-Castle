@@ -77,6 +77,7 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
   void _showDetails(LanguageCard card) {
     final isEmbedded = card.tableName == 'Embedded' || card.category == CardCategory.embedded;
     final isDistributed = isEmbedded && embeddedSubtypeFor(card) == EmbeddedSubtype.distributed;
+    final isComplianceSet = card.tableName == 'Compliance Sets';
 
     showDialog<void>(
       context: context,
@@ -98,6 +99,31 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
               if (isEmbedded) ...[
                 const SizedBox(height: 16),
                 _DetailLabel(label: 'EMBEDDED STATUS', value: embeddedSubtypeLabel(card), color: CardCategory.embedded.color),
+              ],
+              if (isComplianceSet) ...[
+                const SizedBox(height: 16),
+                _DetailLabel(label: 'SET NAME', value: card.text),
+                const SizedBox(height: 16),
+                _DetailLabel(label: 'COMMAND COUNT', value: '${card.fragments.length} commands'),
+                const SizedBox(height: 16),
+                const Text('COMMANDS IN EXACT ORDER', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 1.5)),
+                const SizedBox(height: 6),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (var i = 0; i < card.fragments.length; i++)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('${i + 1}. ', style: const TextStyle(color: Color(0xFF80796C), fontSize: 13)),
+                            Expanded(child: Text(card.fragments[i], style: const TextStyle(color: Color(0xFFE8C85A), fontSize: 13, fontWeight: FontWeight.w600))),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               ],
               if (isDistributed) ...[
                 const SizedBox(height: 16),
@@ -426,6 +452,10 @@ class _ResearchResultCard extends StatelessWidget {
               if (card.tableName == 'Embedded' || card.category == CardCategory.embedded) ...[
                 const SizedBox(height: 5),
                 Text(embeddedSubtypeLabel(card), overflow: TextOverflow.ellipsis, style: TextStyle(color: CardCategory.embedded.color, fontSize: 10)),
+              ],
+              if (card.tableName == 'Compliance Sets') ...[
+                const SizedBox(height: 5),
+                Text('${card.fragments.length} commands in sequence', overflow: TextOverflow.ellipsis, style: TextStyle(color: card.category.color, fontSize: 10)),
               ],
             ],
           ),

@@ -75,7 +75,26 @@ const languageTables = <LanguageTable>[
   ),
   LanguageTable(
     name: 'Compliance Sets',
-    cards: [],
+    cards: [
+      LanguageCard(
+        id: 'comp-set-1',
+        text: 'Beginning',
+        category: CardCategory.red,
+        tableName: 'Compliance Sets',
+        referenceNote: 'Sequential three-command compliance set.',
+        fragments: ['come in', 'sit down', 'place feet flat on ground'],
+        isResearchOnly: true,
+      ),
+      LanguageCard(
+        id: 'comp-set-2',
+        text: 'Additional things',
+        category: CardCategory.red,
+        tableName: 'Compliance Sets',
+        referenceNote: 'Sequential three-command compliance set.',
+        fragments: ['put your hands in your lap', 'close your eyes', 'take a deep breath'],
+        isResearchOnly: true,
+      ),
+    ],
   ),
   LanguageTable(
     name: 'Notice',

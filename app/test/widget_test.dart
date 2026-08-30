@@ -576,7 +576,7 @@ void main() {
 
   testWidgets('Research results show Linkage subtype status and filtered count', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
-    expect(find.text('125 results'), findsOneWidget);
+    expect(find.text('127 results'), findsOneWidget);
     expect(find.text('Basic Linkages'), findsNWidgets(5));
     expect(find.text('Restatement Linkages'), findsNWidgets(6));
     expect(find.text('Momentum Linkages'), findsNWidgets(4));
@@ -607,7 +607,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Reset research filters'));
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.text('125 results'), findsOneWidget);
+    expect(find.text('127 results'), findsOneWidget);
     expect(find.text('or should I say'), findsOneWidget);
     expect(find.text('Unclassified'), findsNothing);
     expect(tester.widget<TextField>(find.byKey(const ValueKey('research-search-field'))).controller!.text, isEmpty);
@@ -633,7 +633,7 @@ void main() {
     await tester.tap(find.text('All Tables').last);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('research-linkage-subtype-filter')), findsOneWidget);
-    expect(find.text('125 results'), findsOneWidget);
+    expect(find.text('127 results'), findsOneWidget);
   });
 
   testWidgets('Research details show the confirmed Linkage subtype', (WidgetTester tester) async {
@@ -1191,20 +1191,16 @@ void main() {
     expect(languageTables, hasLength(12));
     for (final table in languageTables) {
       expect(table.name, isNotEmpty);
-      if (table.name == 'Compliance Sets') {
-        expect(table.cards, isEmpty);
-      } else {
-        expect(table.cards, isNotEmpty);
-        for (final card in table.cards) {
-          expect(card.text.trim(), isNotEmpty);
-          expect(card.category.label, isNotEmpty);
-          expect(card.category.color.a, greaterThan(0));
-        }
+      expect(table.cards, isNotEmpty);
+      for (final card in table.cards) {
+        expect(card.text.trim(), isNotEmpty);
+        expect(card.category.label, isNotEmpty);
+        expect(card.category.color.a, greaterThan(0));
       }
     }
   });
 
-  test('Compliance hierarchy and Compliance Commands table are formalized', () {
+  test('Compliance hierarchy and approved Compliance Sets are formalized', () {
     expect(CardCategory.red.label, 'Compliance');
     expect(CardCategory.red.color, const Color(0xFFB94D4B));
 
@@ -1216,7 +1212,7 @@ void main() {
     final setsTable = tablesByName['Compliance Sets']!;
 
     expect(commandsTable.cards, hasLength(12));
-    expect(setsTable.cards, isEmpty);
+    expect(setsTable.cards, hasLength(2));
 
     final expectedIds = [for (var i = 1; i <= 12; i++) 'comp-$i'];
     expect(commandsTable.cards.map((c) => c.id), expectedIds);
@@ -1236,6 +1232,22 @@ void main() {
       'Allow yourself to listen',
       'Just let your eyes rest',
     ]));
+
+    final set1 = setsTable.cards.firstWhere((c) => c.text == 'Beginning');
+    expect(set1.id, 'comp-set-1');
+    expect(set1.category, CardCategory.red);
+    expect(set1.tableName, 'Compliance Sets');
+    expect(set1.isResearchOnly, isTrue);
+    expect(set1.fragments, ['come in', 'sit down', 'place feet flat on ground']);
+    expect(set1.fragments, hasLength(greaterThanOrEqualTo(3)));
+
+    final set2 = setsTable.cards.firstWhere((c) => c.text == 'Additional things');
+    expect(set2.id, 'comp-set-2');
+    expect(set2.category, CardCategory.red);
+    expect(set2.tableName, 'Compliance Sets');
+    expect(set2.isResearchOnly, isTrue);
+    expect(set2.fragments, ['put your hands in your lap', 'close your eyes', 'take a deep breath']);
+    expect(set2.fragments, hasLength(greaterThanOrEqualTo(3)));
   });
 
   testWidgets('Research Laboratory filters distinguish Compliance Commands and Compliance Sets', (WidgetTester tester) async {
@@ -1245,8 +1257,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Compliance').last);
     await tester.pumpAndSettle();
-    expect(find.text('12 results'), findsOneWidget);
+    expect(find.text('14 results'), findsOneWidget);
     expect(find.text('Relax your eyes'), findsOneWidget);
+    expect(find.text('Beginning'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('research-category-filter')));
     await tester.pumpAndSettle();
@@ -1263,7 +1276,14 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Compliance Sets').last);
     await tester.pumpAndSettle();
-    expect(find.text('0 results'), findsOneWidget);
+    expect(find.text('2 results'), findsOneWidget);
+    expect(find.text('Beginning'), findsOneWidget);
+    expect(find.text('Additional things'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const ValueKey('research-search-field')), 'place feet');
+    await tester.pumpAndSettle();
+    expect(find.text('1 results'), findsOneWidget);
+    expect(find.text('Beginning'), findsOneWidget);
   });
 
   testWidgets('all production tables render cards on the narrow mobile wall layout', (WidgetTester tester) async {
@@ -1274,9 +1294,10 @@ void main() {
 
     for (var index = 0; index < languageTables.length; index++) {
       final table = languageTables[index];
-      if (table.cards.isNotEmpty) {
+      final wallCards = table.cards.where((card) => !card.isResearchOnly).toList();
+      if (wallCards.isNotEmpty) {
         expect(find.byTooltip('Add to Wall'), findsWidgets);
-        expect(find.text(table.cards.first.text), findsOneWidget);
+        expect(find.text(wallCards.first.text), findsOneWidget);
       } else {
         expect(find.text(table.name), findsOneWidget);
       }
