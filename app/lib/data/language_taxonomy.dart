@@ -100,43 +100,23 @@ extension CauseEffectFilterDetails on CauseEffectFilter {
       };
 }
 
-/// Internal Linkage filters. These replace Restatement/Momentum as the v1 model.
-enum LinkageFilter { additive, contrastive, alternative, sequentialContinuative, relationalStructural }
+enum LinkageSubtype { basic, restatement, momentum }
 
-extension LinkageFilterDetails on LinkageFilter {
-  String get label => switch (this) {
-        LinkageFilter.additive => 'Additive',
-        LinkageFilter.contrastive => 'Contrastive',
-        LinkageFilter.alternative => 'Alternative',
-        LinkageFilter.sequentialContinuative => 'Sequential / Continuative',
-        LinkageFilter.relationalStructural => 'Relational / Structural',
-      };
-}
-
-/// The eight locked core Time Bind stems in Language Taxonomy v1.0.
-const coreTimeBindStems = <String>[
-  'before',
-  'after',
-  'while',
-  'when',
-  'as',
-  'once you',
-  'now that',
-  'during',
-];
-
-/// Legacy Linkage subtypes are retained temporarily so the current UI can be
-/// migrated without a breaking change. New content should use [LinkageFilter].
-@Deprecated('Use LinkageFilter for Language Taxonomy v1.0 content.')
-enum LinkageSubtype { restatement, momentum }
-
-@Deprecated('Use LinkageFilterDetails for Language Taxonomy v1.0 content.')
 extension LinkageSubtypeDetails on LinkageSubtype {
   String get label => switch (this) {
+        LinkageSubtype.basic => 'Basic Linkages',
         LinkageSubtype.restatement => 'Restatement Linkages',
         LinkageSubtype.momentum => 'Momentum Linkages',
       };
 }
+
+const _basicLinkages = {
+  'and',
+  'because',
+  'as',
+  'while',
+  'which means',
+};
 
 const _restatementLinkages = {
   'or should i say',
@@ -148,26 +128,21 @@ const _restatementLinkages = {
 };
 
 const _momentumLinkages = {
-  'and',
-  'because',
-  'as',
-  'while',
   "and if that's the case",
   'and as a result',
   'of course',
   'obviously',
 };
 
-/// Legacy helper retained during migration.
 LinkageSubtype? linkageSubtypeFor(LanguageCard card) {
   if (card.tableName != 'Linkages') return null;
   final text = card.text.toLowerCase();
+  if (_basicLinkages.contains(text)) return LinkageSubtype.basic;
   if (_restatementLinkages.contains(text)) return LinkageSubtype.restatement;
   if (_momentumLinkages.contains(text)) return LinkageSubtype.momentum;
   return null;
 }
 
-/// Legacy helper retained during migration.
 String linkageSubtypeLabel(LanguageCard card) => linkageSubtypeFor(card)?.label ?? 'Unclassified';
 
 EmbeddedSubtype? embeddedSubtypeFor(LanguageCard card) {

@@ -503,11 +503,13 @@ void main() {
 
   test('expanded Linkages corpus contains only the confirmed subtype examples', () {
     final linkages = languageTables.firstWhere((table) => table.name == 'Linkages').cards;
+    final basic = linkages.where((card) => linkageSubtypeFor(card) == LinkageSubtype.basic).toList();
     final restatement = linkages.where((card) => linkageSubtypeFor(card) == LinkageSubtype.restatement).toList();
     final momentum = linkages.where((card) => linkageSubtypeFor(card) == LinkageSubtype.momentum).toList();
     final unclassified = linkages.where((card) => linkageSubtypeFor(card) == null).toList();
 
-    expect(linkages, hasLength(14));
+    expect(linkages, hasLength(15));
+    expect(basic.map((card) => card.text), ['and', 'because', 'as', 'while', 'which means']);
     expect(restatement.map((card) => card.text), [
       'or should I say',
       'or you could say',
@@ -517,17 +519,23 @@ void main() {
       'or rather',
     ]);
     expect(momentum.map((card) => card.text), [
-      'and',
-      'because',
-      'as',
-      'while',
       "and if that's the case",
       'and as a result',
       'of course',
       'obviously',
     ]);
     expect(unclassified, isEmpty);
-    expect(linkages.map((card) => card.id).toSet(), hasLength(14));
+    expect(linkages.map((card) => card.id).toSet(), hasLength(15));
+
+    // Confirm both "which means" exist in their separate functional tables
+    final causeAndEffect = languageTables.firstWhere((table) => table.name == 'Cause and Effect').cards;
+    expect(linkages.any((c) => c.id == 'link-5' && c.text == 'which means'), isTrue);
+    expect(causeAndEffect.any((c) => c.id == 'cause-5' && c.text == 'which means'), isTrue);
+
+    // Confirm as / while in Linkages vs as you / while you in Time Binds
+    final timeBinds = languageTables.firstWhere((table) => table.name == 'Time Binds').cards;
+    expect(linkages.map((c) => c.text), containsAll(['as', 'while']));
+    expect(timeBinds.map((c) => c.text), containsAll(['as you', 'while you']));
   });
 
   testWidgets('Research Laboratory filters by Linkage Subtype', (WidgetTester tester) async {
@@ -568,16 +576,17 @@ void main() {
 
   testWidgets('Research results show Linkage subtype status and filtered count', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
-    expect(find.text('124 results'), findsOneWidget);
+    expect(find.text('125 results'), findsOneWidget);
+    expect(find.text('Basic Linkages'), findsNWidgets(5));
     expect(find.text('Restatement Linkages'), findsNWidgets(6));
-    expect(find.text('Momentum Linkages'), findsNWidgets(8));
+    expect(find.text('Momentum Linkages'), findsNWidgets(4));
     expect(find.text('Unclassified'), findsNothing);
 
     await tester.tap(find.byKey(const ValueKey('research-linkage-subtype-filter')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Momentum Linkages').last);
+    await tester.tap(find.text('Basic Linkages').last);
     await tester.pumpAndSettle();
-    expect(find.text('8 results'), findsOneWidget);
+    expect(find.text('5 results'), findsOneWidget);
     expect(find.text('Restatement Linkages'), findsNothing);
   });
 
@@ -598,7 +607,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Reset research filters'));
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.text('124 results'), findsOneWidget);
+    expect(find.text('125 results'), findsOneWidget);
     expect(find.text('or should I say'), findsOneWidget);
     expect(find.text('Unclassified'), findsNothing);
     expect(tester.widget<TextField>(find.byKey(const ValueKey('research-search-field'))).controller!.text, isEmpty);
@@ -624,7 +633,7 @@ void main() {
     await tester.tap(find.text('All Tables').last);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('research-linkage-subtype-filter')), findsOneWidget);
-    expect(find.text('124 results'), findsOneWidget);
+    expect(find.text('125 results'), findsOneWidget);
   });
 
   testWidgets('Research details show the confirmed Linkage subtype', (WidgetTester tester) async {
@@ -653,7 +662,7 @@ void main() {
     expect(linkageSubtypeFor(restatement), LinkageSubtype.restatement);
     expect(linkageSubtypeFor(momentum), LinkageSubtype.momentum);
     expect(languageTables[2].cards.every((card) => linkageSubtypeFor(card) != null), isTrue);
-    expect(linkageSubtypeLabel(languageTables[2].cards.first), 'Momentum Linkages');
+    expect(linkageSubtypeLabel(languageTables[2].cards.first), 'Basic Linkages');
     expect(languageTables.first.name, 'Nominals');
     expect('Nominals are the abbreviated app term for hypnotic nominalizations.', contains('Nominals'));
   });

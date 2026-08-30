@@ -116,13 +116,17 @@ static const _tableGuidance = <String, List<Widget>>{
   'Linkages': [
     Text('Linkages are spoken transition structures that maintain and shape hypnotic/conversational momentum.', style: TextStyle(color: Color(0xFFE0D3B8), fontSize: 14, height: 1.4)),
     SizedBox(height: 16),
+    Text('BASIC LINKAGES', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 1.5)),
+    SizedBox(height: 5),
+    Text('Simple connective scaffolding joining statements.', style: TextStyle(color: Color(0xFFE0D3B8), fontSize: 14, height: 1.4)),
+    SizedBox(height: 14),
     Text('RESTATEMENT LINKAGES', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 1.5)),
     SizedBox(height: 5),
-    Text('Linkages used to restate or reinforce a suggestion in a different way.', style: TextStyle(color: Color(0xFFE0D3B8), fontSize: 14, height: 1.4)),
+    Text('Structures used to restate or rephrase an idea while maintaining flow.', style: TextStyle(color: Color(0xFFE0D3B8), fontSize: 14, height: 1.4)),
     SizedBox(height: 14),
     Text('MOMENTUM LINKAGES', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 1.5)),
     SizedBox(height: 5),
-    Text('Linkages used to maintain verbal flow and give the speaker processing time without breaking delivery.', style: TextStyle(color: Color(0xFFE0D3B8), fontSize: 14, height: 1.4)),
+    Text('Structures used to maintain or propel conversational/hypnotic momentum.', style: TextStyle(color: Color(0xFFE0D3B8), fontSize: 14, height: 1.4)),
   ],
 };
 }

@@ -43,6 +43,7 @@ const languageTables = <LanguageTable>[
       LanguageCard(id: 'link-2', text: 'because', category: CardCategory.green, tableName: 'Linkages'),
       LanguageCard(id: 'link-3', text: 'as', category: CardCategory.green, tableName: 'Linkages'),
       LanguageCard(id: 'link-4', text: 'while', category: CardCategory.green, tableName: 'Linkages'),
+      LanguageCard(id: 'link-5', text: 'which means', category: CardCategory.green, tableName: 'Linkages'),
       LanguageCard(id: 'link-restatement-1', text: 'or should I say', category: CardCategory.green, tableName: 'Linkages'),
       LanguageCard(id: 'link-restatement-2', text: 'or you could say', category: CardCategory.green, tableName: 'Linkages'),
       LanguageCard(id: 'link-restatement-3', text: 'in other words', category: CardCategory.green, tableName: 'Linkages'),

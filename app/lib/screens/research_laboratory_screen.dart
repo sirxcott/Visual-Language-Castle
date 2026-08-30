@@ -333,7 +333,7 @@ class _ResearchControls extends StatelessWidget {
           isExpanded: true,
           key: const ValueKey('research-linkage-subtype-filter'),
           decoration: const InputDecoration(labelText: 'Linkage Subtype', border: OutlineInputBorder()),
-          items: ['All Linkage Subtypes', 'Restatement Linkages', 'Momentum Linkages', 'Unclassified']
+          items: ['All Linkage Subtypes', 'Basic Linkages', 'Restatement Linkages', 'Momentum Linkages']
               .map((subtype) => DropdownMenuItem(value: subtype, child: Text(subtype, maxLines: 1, overflow: TextOverflow.ellipsis)))
               .toList(),
           onChanged: (value) {
