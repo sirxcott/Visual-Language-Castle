@@ -31,6 +31,9 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
   late String _initialArchiveSnapshot;
   bool _allowPop = false;
   bool _exitPromptOpen = false;
+  BoxConstraints? _wallConstraints;
+  bool _wallMobile = false;
+  Map<String, Offset>? _lastArrangeSnapshot;
 
   bool get _hasUnsavedChanges => widget.sourceWork != null && _initialArchiveSnapshot != _archiveSnapshot();
 
@@ -222,6 +225,43 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
     );
   }
 
+  void _arrangeCards() {
+    final constraints = _wallConstraints;
+    if (constraints == null || _workspaceCards.isEmpty) return;
+    const spacingX = 20.0;
+    const spacingY = 20.0;
+    const startX = 16.0;
+    const startY = 16.0;
+    final cardWidth = _wallMobile ? 170.0 : 240.0;
+    const cardHeight = 130.0;
+    final columns = ((constraints.maxWidth - startX * 2 + spacingX) / (cardWidth + spacingX)).floor().clamp(1, _workspaceCards.length);
+    final previousPositions = {for (final card in _workspaceCards) card.instanceId: card.position};
+    setState(() {
+      for (var index = 0; index < _workspaceCards.length; index++) {
+        final row = index ~/ columns;
+        final col = index % columns;
+        final position = Offset(startX + col * (cardWidth + spacingX), startY + row * (cardHeight + spacingY));
+        _workspaceCards[index].position = _clampCardPosition(position, constraints);
+      }
+      _lastArrangeSnapshot = previousPositions;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: const Text('Arranged sticky notes'), action: SnackBarAction(label: 'Undo', onPressed: _undoArrange)),
+    );
+  }
+
+  void _undoArrange() {
+    final snapshot = _lastArrangeSnapshot;
+    if (snapshot == null) return;
+    setState(() {
+      for (final card in _workspaceCards) {
+        final previous = snapshot[card.instanceId];
+        if (previous != null) card.position = previous;
+      }
+      _lastArrangeSnapshot = null;
+    });
+  }
+
   void _clampWorkspaceCards(BoxConstraints constraints) {
     var changed = false;
     for (final card in _workspaceCards) {
@@ -359,7 +399,7 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              _RoomHeader(onBack: _requestExit, onSave: _saveToArchive, onUpdate: widget.sourceWork == null ? null : _updateArchive, connectionMode: _connectionMode, onToggleConnections: _toggleConnectionMode),
+              _RoomHeader(onBack: _requestExit, onSave: _saveToArchive, onUpdate: widget.sourceWork == null ? null : _updateArchive, connectionMode: _connectionMode, onToggleConnections: _toggleConnectionMode, onArrange: _workspaceCards.isEmpty ? null : _arrangeCards),
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, roomConstraints) {
@@ -371,6 +411,8 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
                         builder: (context, candidateData, rejectedData) {
                           return LayoutBuilder(
                             builder: (context, constraints) {
+                              _wallConstraints = constraints;
+                              _wallMobile = roomConstraints.maxWidth < 700;
                               _clampWorkspaceCards(constraints);
                               return Stack(
                               key: const ValueKey('working-wall-stack'),
@@ -572,13 +614,14 @@ class _ArchiveNameDialogState extends State<_ArchiveNameDialog> {
 }
 
 class _RoomHeader extends StatelessWidget {
-  const _RoomHeader({required this.onBack, required this.onSave, required this.onUpdate, required this.connectionMode, required this.onToggleConnections});
+  const _RoomHeader({required this.onBack, required this.onSave, required this.onUpdate, required this.connectionMode, required this.onToggleConnections, required this.onArrange});
 
   final VoidCallback onBack;
   final VoidCallback onSave;
   final VoidCallback? onUpdate;
   final bool connectionMode;
   final VoidCallback onToggleConnections;
+  final VoidCallback? onArrange;
 
   @override
   Widget build(BuildContext context) {
@@ -607,13 +650,33 @@ class _RoomHeader extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('PRACTICE ROOM', style: TextStyle(color: gold, fontSize: 10, letterSpacing: 2.5, fontWeight: FontWeight.w700)),
+                const Text('PRACTICE ROOM', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: gold, fontSize: 10, letterSpacing: 2.5, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 2),
-                const Text('The Working Wall', overflow: TextOverflow.ellipsis, style: TextStyle(color: Color(0xFFF5EEDA), fontSize: 20, fontWeight: FontWeight.w500)),
+                const Text('The Working Wall', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Color(0xFFF5EEDA), fontSize: 20, fontWeight: FontWeight.w500)),
               ],
             ),
           ),
           const Spacer(),
+          if (compact)
+            IconButton(
+              tooltip: 'Arrange',
+              onPressed: onArrange,
+              icon: const Icon(Icons.grid_view_rounded, color: brass),
+            )
+          else
+            FilledButton.icon(
+              onPressed: onArrange,
+              icon: const Icon(Icons.grid_view_rounded, size: 17),
+              label: const Text('Arrange'),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF1E1B15),
+                foregroundColor: const Color(0xFFE0D3B8),
+                side: const BorderSide(color: brass, width: 1.2),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0.5),
+              ),
+            ),
+          const SizedBox(width: 10),
           if (compact)
             IconButton(
               tooltip: connectionMode ? 'Exit Connections' : 'Connections',
