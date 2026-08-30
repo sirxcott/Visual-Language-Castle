@@ -65,16 +65,6 @@ extension NominalFilterDetails on NominalFilter {
       };
 }
 
-/// Internal Verb filters. These are not separate Tables.
-enum VerbFilter { directProcess, metaphoricalProcess }
-
-extension VerbFilterDetails on VerbFilter {
-  String get label => switch (this) {
-        VerbFilter.directProcess => 'Direct Process',
-        VerbFilter.metaphoricalProcess => 'Metaphorical Process',
-      };
-}
-
 /// Internal LY Modifier filters. These are not separate Tables.
 enum LyModifierFilter { degreeIntensity, paceProgression, easeEffort, stateQuality }
 

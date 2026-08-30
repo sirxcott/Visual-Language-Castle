@@ -107,6 +107,9 @@ static const _tableGuidance = <String, List<Widget>>{
   'Nominals': [
     Text('Nominals are the abbreviated app term for hypnotic nominalizations.', style: TextStyle(color: Color(0xFFE0D3B8), fontSize: 14, height: 1.4)),
   ],
+  'Verbs': [
+    Text('Verbs are single root process words naming fundamental internal actions or processes. Longer functional phrases belong in specialized Tables.', style: TextStyle(color: Color(0xFFE0D3B8), fontSize: 14, height: 1.4)),
+  ],
   'Linkages': [
     Text('Linkages are spoken transition structures that maintain and shape hypnotic/conversational momentum.', style: TextStyle(color: Color(0xFFE0D3B8), fontSize: 14, height: 1.4)),
     SizedBox(height: 16),

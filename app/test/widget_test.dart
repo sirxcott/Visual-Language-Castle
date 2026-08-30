@@ -559,7 +559,7 @@ void main() {
 
   testWidgets('Research results show Linkage subtype status and filtered count', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
-    expect(find.text('120 results'), findsOneWidget);
+    expect(find.text('126 results'), findsOneWidget);
     expect(find.text('Restatement Linkages'), findsNWidgets(6));
     expect(find.text('Momentum Linkages'), findsNWidgets(4));
     expect(find.text('Unclassified'), findsNWidgets(5));
@@ -579,7 +579,7 @@ void main() {
     await tester.tap(find.text('Verbs').last);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('research-linkage-subtype-filter')), findsNothing);
-    expect(find.text('6 results'), findsOneWidget);
+    expect(find.text('12 results'), findsOneWidget);
   });
 
   testWidgets('Research Reset Filters restores the full result set', (WidgetTester tester) async {
@@ -589,7 +589,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Reset research filters'));
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.text('120 results'), findsOneWidget);
+    expect(find.text('126 results'), findsOneWidget);
     expect(find.text('or should I say'), findsOneWidget);
     expect(find.text('Unclassified'), findsNWidgets(5));
     expect(tester.widget<TextField>(find.byKey(const ValueKey('research-search-field'))).controller!.text, isEmpty);
@@ -607,7 +607,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Verbs').last);
     await tester.pumpAndSettle();
-    expect(find.text('6 results'), findsOneWidget);
+    expect(find.text('12 results'), findsOneWidget);
     expect(find.byKey(const ValueKey('research-linkage-subtype-filter')), findsNothing);
 
     await tester.tap(find.byKey(const ValueKey('research-table-filter')));
@@ -615,7 +615,7 @@ void main() {
     await tester.tap(find.text('All Tables').last);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('research-linkage-subtype-filter')), findsOneWidget);
-    expect(find.text('120 results'), findsOneWidget);
+    expect(find.text('126 results'), findsOneWidget);
   });
 
   testWidgets('Research details show the confirmed Linkage subtype', (WidgetTester tester) async {
@@ -1065,6 +1065,67 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('1 results'), findsOneWidget);
     expect(find.text('a quiet realization'), findsOneWidget);
+  });
+
+  test('Verbs is formalized and expanded as a unified table', () {
+    final tablesByName = {for (final table in languageTables) table.name: table};
+    expect(tablesByName, contains('Verbs'));
+
+    final verbsTable = tablesByName['Verbs']!;
+    expect(verbsTable.cards, hasLength(12));
+
+    final verbTexts = verbsTable.cards.map((c) => c.text).toList();
+    expect(verbTexts, [
+      'notice',
+      'allow',
+      'remember',
+      'discover',
+      'feel',
+      'continue',
+      'realize',
+      'imagine',
+      'experience',
+      'absorb',
+      'wonder',
+      'recognize',
+    ]);
+
+    for (var i = 0; i < 12; i++) {
+      expect(verbsTable.cards[i].id, 'verb-${i + 1}');
+      expect(verbsTable.cards[i].category, CardCategory.pink);
+      expect(verbsTable.cards[i].tableName, 'Verbs');
+    }
+    expect(CardCategory.pink.color, const Color(0xFFC55B78));
+
+    // Confirm longer functional phrases remain in specialized tables and not in Verbs
+    final noticeTable = tablesByName['Notice']!;
+    final complianceTable = tablesByName['Compliance Set']!;
+    final deepenersTable = tablesByName['Deepeners']!;
+
+    expect(noticeTable.cards.map((c) => c.text), contains('notice how'));
+    expect(verbsTable.cards.map((c) => c.text), isNot(contains('notice how')));
+
+    expect(complianceTable.cards.map((c) => c.text), contains('Allow your shoulders to relax'));
+    expect(verbsTable.cards.map((c) => c.text), isNot(contains('Allow your shoulders to relax')));
+
+    expect(deepenersTable.cards.map((c) => c.text), contains('as you continue to sink deeper and deeper'));
+    expect(verbsTable.cards.map((c) => c.text), isNot(contains('as you continue to sink deeper and deeper')));
+  });
+
+  testWidgets('Research Laboratory filters and searches expanded Verbs', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
+
+    await tester.tap(find.byKey(const ValueKey('research-table-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Verbs').last);
+    await tester.pumpAndSettle();
+    expect(find.text('12 results'), findsOneWidget);
+    expect(find.text('recognize'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const ValueKey('research-search-field')), 'imagine');
+    await tester.pumpAndSettle();
+    expect(find.text('1 results'), findsOneWidget);
+    expect(find.text('imagine').last, findsOneWidget);
   });
 
   test('every production table has defined metadata and resolved category color', () {

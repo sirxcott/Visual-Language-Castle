@@ -28,6 +28,12 @@ const languageTables = <LanguageTable>[
       LanguageCard(id: 'verb-4', text: 'discover', category: CardCategory.pink, tableName: 'Verbs'),
       LanguageCard(id: 'verb-5', text: 'feel', category: CardCategory.pink, tableName: 'Verbs'),
       LanguageCard(id: 'verb-6', text: 'continue', category: CardCategory.pink, tableName: 'Verbs'),
+      LanguageCard(id: 'verb-7', text: 'realize', category: CardCategory.pink, tableName: 'Verbs'),
+      LanguageCard(id: 'verb-8', text: 'imagine', category: CardCategory.pink, tableName: 'Verbs'),
+      LanguageCard(id: 'verb-9', text: 'experience', category: CardCategory.pink, tableName: 'Verbs'),
+      LanguageCard(id: 'verb-10', text: 'absorb', category: CardCategory.pink, tableName: 'Verbs'),
+      LanguageCard(id: 'verb-11', text: 'wonder', category: CardCategory.pink, tableName: 'Verbs'),
+      LanguageCard(id: 'verb-12', text: 'recognize', category: CardCategory.pink, tableName: 'Verbs'),
     ],
   ),
   LanguageTable(
