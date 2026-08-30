@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="visual_language_castle"
+        android:label="Visual Language Castle"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

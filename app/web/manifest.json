@@ -1,11 +1,11 @@
 {
-    "name": "visual_language_castle",
-    "short_name": "visual_language_castle",
+    "name": "Visual Language Castle",
+    "short_name": "Castle",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0A0B0C",
+    "theme_color": "#1B1D1E",
+    "description": "Enter the architecture of language.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

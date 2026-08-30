@@ -1,4 +1,4 @@
-package com.example.visual_language_castle
+package com.sirxcott.visuallanguagecastle
 
 import io.flutter.embedding.android.FlutterActivity
 
