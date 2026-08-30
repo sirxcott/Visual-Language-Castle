@@ -69,12 +69,28 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
     final discard = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF242627),
-        title: const Text('Unsaved changes'),
-        content: const Text('This archived work has unsaved changes.'),
+        backgroundColor: const Color(0xFF1B1D1E),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: const BorderSide(color: Color(0xFF876E43), width: 1.5),
+        ),
+        title: const Text('Unsaved changes', style: TextStyle(color: Color(0xFFF5EEDA), fontSize: 20, fontWeight: FontWeight.w600)),
+        content: const Text('This archived work has unsaved changes.', style: TextStyle(color: Color(0xFFC2B7A0), fontSize: 14, height: 1.35)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Return to Editing')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Discard Changes')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFFC2B7A0)),
+            child: const Text('Return to Editing'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF2A1514),
+              foregroundColor: const Color(0xFFE57373),
+              side: const BorderSide(color: Color(0xFFC4776E), width: 1.2),
+            ),
+            child: const Text('Discard Changes'),
+          ),
         ],
       ),
     );
@@ -111,12 +127,28 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
     final confirmed = retry ? true : await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF242627),
-        title: const Text('Update archive?'),
-        content: Text('Overwrite "${sourceWork.name}" with the current Working Wall?'),
+        backgroundColor: const Color(0xFF1B1D1E),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: const BorderSide(color: Color(0xFF876E43), width: 1.5),
+        ),
+        title: const Text('Update archive?', style: TextStyle(color: Color(0xFFF5EEDA), fontSize: 20, fontWeight: FontWeight.w600)),
+        content: Text('Overwrite "${sourceWork.name}" with the current Working Wall?', style: const TextStyle(color: Color(0xFFC2B7A0), fontSize: 14, height: 1.35)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Update')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFFC2B7A0)),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF1E1B15),
+              foregroundColor: const Color(0xFFD4AF37),
+              side: const BorderSide(color: Color(0xFFC09A52), width: 1.2),
+            ),
+            child: const Text('Update'),
+          ),
         ],
       ),
     );
@@ -231,12 +263,28 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF242627),
-        title: const Text('Remove card?'),
-        content: Text('Remove "${workspaceCard.card.text}" from the Working Wall?'),
+        backgroundColor: const Color(0xFF1B1D1E),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: const BorderSide(color: Color(0xFF876E43), width: 1.5),
+        ),
+        title: const Text('Remove card?', style: TextStyle(color: Color(0xFFF5EEDA), fontSize: 20, fontWeight: FontWeight.w600)),
+        content: Text('Remove "${workspaceCard.card.text}" from the Working Wall?', style: const TextStyle(color: Color(0xFFC2B7A0), fontSize: 14, height: 1.35)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Remove')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFFC2B7A0)),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF2A1514),
+              foregroundColor: const Color(0xFFE57373),
+              side: const BorderSide(color: Color(0xFFC4776E), width: 1.2),
+            ),
+            child: const Text('Remove'),
+          ),
         ],
       ),
     );
@@ -398,33 +446,55 @@ class _NotesDialogState extends State<_NotesDialog> {
   Widget build(BuildContext context) {
     final card = widget.workspaceCard.card;
     return AlertDialog(
-      backgroundColor: const Color(0xFF242627),
-      title: Text(card.text, style: const TextStyle(color: Color(0xFFF0E6D2), fontSize: 18)),
+      backgroundColor: const Color(0xFF1B1D1E),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: Color(0xFF876E43), width: 1.5),
+      ),
+      title: Text(card.text, style: const TextStyle(color: Color(0xFFF5EEDA), fontSize: 20, fontWeight: FontWeight.w600)),
       content: SizedBox(
         width: 420,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('REFERENCE NOTE', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 1.5)),
+            const Text('REFERENCE NOTE', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 10, letterSpacing: 1.5, fontWeight: FontWeight.w700)),
             const SizedBox(height: 6),
-            Text(card.referenceNote.isEmpty ? 'No reference note supplied.' : card.referenceNote, style: const TextStyle(color: Color(0xFFAAA294), fontSize: 13, height: 1.35)),
+            Text(card.referenceNote.isEmpty ? 'No reference note supplied.' : card.referenceNote, style: const TextStyle(color: Color(0xFFC2B7A0), fontSize: 13, height: 1.35)),
             const SizedBox(height: 18),
-            const Text('YOUR NOTES', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 1.5)),
+            const Text('YOUR NOTES', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 10, letterSpacing: 1.5, fontWeight: FontWeight.w700)),
             const SizedBox(height: 6),
             TextField(
               controller: _controller,
               autofocus: true,
               maxLines: 5,
-              style: const TextStyle(color: Color(0xFFF0E6D2)),
-              decoration: const InputDecoration(hintText: 'Add a note for this card', border: OutlineInputBorder()),
+              style: const TextStyle(color: Color(0xFFF5EEDA)),
+              decoration: const InputDecoration(
+                hintText: 'Add a note for this card',
+                hintStyle: TextStyle(color: Color(0xFF80796C)),
+                border: OutlineInputBorder(),
+                focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFFD4AF37), width: 1.5)),
+                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF6E5935), width: 1.0)),
+              ),
             ),
           ],
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        FilledButton(onPressed: () => Navigator.pop(context, _controller.text), child: const Text('Save note')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          style: TextButton.styleFrom(foregroundColor: const Color(0xFFC2B7A0)),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _controller.text),
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF1E1B15),
+            foregroundColor: const Color(0xFFD4AF37),
+            side: const BorderSide(color: Color(0xFFC09A52), width: 1.2),
+          ),
+          child: const Text('Save note'),
+        ),
       ],
     );
   }
@@ -459,21 +529,43 @@ class _ArchiveNameDialogState extends State<_ArchiveNameDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: const Color(0xFF242627),
-      title: const Text('Save to Archive'),
+      backgroundColor: const Color(0xFF1B1D1E),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: Color(0xFF876E43), width: 1.5),
+      ),
+      title: const Text('Save to Archive', style: TextStyle(color: Color(0xFFF5EEDA), fontSize: 20, fontWeight: FontWeight.w600)),
       content: TextField(
         controller: _nameController,
         autofocus: true,
+        style: const TextStyle(color: Color(0xFFF5EEDA)),
         decoration: InputDecoration(
           labelText: 'Work name',
+          labelStyle: const TextStyle(color: Color(0xFFD4AF37)),
           hintText: 'Name this wall arrangement',
+          hintStyle: const TextStyle(color: Color(0xFF80796C)),
           errorText: _nameError ? 'A work name is required' : null,
+          border: const OutlineInputBorder(),
+          focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Color(0xFFD4AF37), width: 1.5)),
+          enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF6E5935), width: 1.0)),
         ),
         onSubmitted: (_) => _submit(),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        FilledButton(onPressed: _submit, child: const Text('Save')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          style: TextButton.styleFrom(foregroundColor: const Color(0xFFC2B7A0)),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF1E1B15),
+            foregroundColor: const Color(0xFFD4AF37),
+            side: const BorderSide(color: Color(0xFFC09A52), width: 1.2),
+          ),
+          child: const Text('Save'),
+        ),
       ],
     );
   }

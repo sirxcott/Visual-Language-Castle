@@ -91,14 +91,24 @@ class TableBrowser extends StatelessWidget {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF242627),
-        title: Text(table.name, style: const TextStyle(color: Color(0xFFF0E6D2), fontSize: 20)),
+        backgroundColor: const Color(0xFF1B1D1E),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: const BorderSide(color: Color(0xFF876E43), width: 1.5),
+        ),
+        title: Text(table.name, style: const TextStyle(color: Color(0xFFF5EEDA), fontSize: 20, fontWeight: FontWeight.w600)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: guidance,
         ),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFFD4AF37)),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }

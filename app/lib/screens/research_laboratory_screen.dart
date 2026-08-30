@@ -312,8 +312,26 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
   Widget _buildResults() {
     final cards = _filteredCards;
     if (cards.isEmpty) {
-      return const Center(
-        child: Text('No language cards match your search.', style: TextStyle(color: Color(0xFFAAA294), fontSize: 16)),
+      return Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 22),
+          decoration: BoxDecoration(
+            color: const Color(0xFF141617).withValues(alpha: 0.85),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFF6E5935).withValues(alpha: 0.6), width: 1.5),
+            boxShadow: const [BoxShadow(color: Colors.black87, blurRadius: 20)],
+          ),
+          child: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.search_off_outlined, size: 36, color: Color(0xFFD4AF37)),
+              SizedBox(height: 12),
+              Text('No matching cards found', style: TextStyle(color: Color(0xFFF5EEDA), fontSize: 17, fontWeight: FontWeight.w500)),
+              SizedBox(height: 6),
+              Text('Try adjusting your search terms, table, or category filters.', style: TextStyle(color: Color(0xFFA9A294), fontSize: 13)),
+            ],
+          ),
+        ),
       );
     }
     return GridView.builder(
@@ -363,6 +381,17 @@ class _ResearchControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const fieldDecoration = InputDecoration(
+      filled: true,
+      fillColor: Color(0xFF141617),
+      labelStyle: TextStyle(color: Color(0xFFD4AF37), fontSize: 13, fontWeight: FontWeight.w600),
+      hintStyle: TextStyle(color: Color(0xFF80796C)),
+      prefixIconColor: Color(0xFFD4AF37),
+      border: OutlineInputBorder(),
+      focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFFD4AF37), width: 1.5)),
+      enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF6E5935), width: 1.0)),
+    );
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final search = Semantics(
@@ -373,19 +402,22 @@ class _ResearchControls extends StatelessWidget {
             focusNode: searchFocusNode,
             key: const ValueKey('research-search-field'),
             autofocus: true,
-            decoration: const InputDecoration(
+            style: const TextStyle(color: Color(0xFFF5EEDA)),
+            decoration: fieldDecoration.copyWith(
               labelText: 'Search language cards',
               hintText: 'Search by card text or table',
-              prefixIcon: Icon(Icons.search),
-              border: OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.search),
             ),
           ),
         );
         final filter = DropdownButtonFormField<String>(
           initialValue: selectedTable,
           isExpanded: true,
+          dropdownColor: const Color(0xFF1B1D1E),
+          style: const TextStyle(color: Color(0xFFF5EEDA)),
+          icon: const Icon(Icons.arrow_drop_down_rounded, color: Color(0xFFD4AF37)),
           key: const ValueKey('research-table-filter'),
-          decoration: const InputDecoration(labelText: 'Table', border: OutlineInputBorder()),
+          decoration: fieldDecoration.copyWith(labelText: 'Table'),
           items: ['All Tables', ...languageTables.map((table) => table.name)].map((table) => DropdownMenuItem(value: table, child: Text(table, maxLines: 1, overflow: TextOverflow.ellipsis))).toList(),
           onChanged: (value) {
             if (value != null) onTableChanged(value);
@@ -394,8 +426,11 @@ class _ResearchControls extends StatelessWidget {
         final categoryFilter = DropdownButtonFormField<String>(
           initialValue: selectedCategory,
           isExpanded: true,
+          dropdownColor: const Color(0xFF1B1D1E),
+          style: const TextStyle(color: Color(0xFFF5EEDA)),
+          icon: const Icon(Icons.arrow_drop_down_rounded, color: Color(0xFFD4AF37)),
           key: const ValueKey('research-category-filter'),
-          decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
+          decoration: fieldDecoration.copyWith(labelText: 'Category'),
           items: [
             'All Categories',
             ...CardCategory.values.map((category) => category.label),
@@ -407,8 +442,11 @@ class _ResearchControls extends StatelessWidget {
         final linkageSubtypeFilter = DropdownButtonFormField<String>(
           initialValue: selectedLinkageSubtype,
           isExpanded: true,
+          dropdownColor: const Color(0xFF1B1D1E),
+          style: const TextStyle(color: Color(0xFFF5EEDA)),
+          icon: const Icon(Icons.arrow_drop_down_rounded, color: Color(0xFFD4AF37)),
           key: const ValueKey('research-linkage-subtype-filter'),
-          decoration: const InputDecoration(labelText: 'Linkage Subtype', border: OutlineInputBorder()),
+          decoration: fieldDecoration.copyWith(labelText: 'Linkage Subtype'),
           items: ['All Linkage Subtypes', 'Basic Linkages', 'Restatement Linkages', 'Momentum Linkages']
               .map((subtype) => DropdownMenuItem(value: subtype, child: Text(subtype, maxLines: 1, overflow: TextOverflow.ellipsis)))
               .toList(),
@@ -419,8 +457,11 @@ class _ResearchControls extends StatelessWidget {
         final embeddedSubtypeFilter = DropdownButtonFormField<String>(
           initialValue: selectedEmbeddedSubtype,
           isExpanded: true,
+          dropdownColor: const Color(0xFF1B1D1E),
+          style: const TextStyle(color: Color(0xFFF5EEDA)),
+          icon: const Icon(Icons.arrow_drop_down_rounded, color: Color(0xFFD4AF37)),
           key: const ValueKey('research-embedded-subtype-filter'),
-          decoration: const InputDecoration(labelText: 'Embedded Subtype', border: OutlineInputBorder()),
+          decoration: fieldDecoration.copyWith(labelText: 'Embedded Subtype'),
           items: ['All Embedded Subtypes', 'Intact Embedded Commands', 'Distributed Embedded Commands']
               .map((subtype) => DropdownMenuItem(value: subtype, child: Text(subtype, maxLines: 1, overflow: TextOverflow.ellipsis)))
               .toList(),
@@ -431,8 +472,11 @@ class _ResearchControls extends StatelessWidget {
         final complianceSubtypeFilter = DropdownButtonFormField<String>(
           initialValue: selectedComplianceSubtype,
           isExpanded: true,
+          dropdownColor: const Color(0xFF1B1D1E),
+          style: const TextStyle(color: Color(0xFFF5EEDA)),
+          icon: const Icon(Icons.arrow_drop_down_rounded, color: Color(0xFFD4AF37)),
           key: const ValueKey('research-compliance-subtype-filter'),
-          decoration: const InputDecoration(labelText: 'Compliance Subtype', border: OutlineInputBorder()),
+          decoration: fieldDecoration.copyWith(labelText: 'Compliance Subtype'),
           items: ['All Compliance Subtypes', 'Voluntary', 'Involuntary']
               .map((subtype) => DropdownMenuItem(value: subtype, child: Text(subtype, maxLines: 1, overflow: TextOverflow.ellipsis)))
               .toList(),
@@ -446,7 +490,15 @@ class _ResearchControls extends StatelessWidget {
         final reset = Semantics(
           button: true,
           label: 'Reset research filters',
-          child: TextButton.icon(onPressed: onReset, icon: const Icon(Icons.refresh_rounded, size: 17), label: const Text('Reset Filters')),
+          child: TextButton.icon(
+            onPressed: onReset,
+            icon: const Icon(Icons.refresh_rounded, size: 17, color: Color(0xFFD4AF37)),
+            label: const Text('Reset Filters'),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFD4AF37),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            ),
+          ),
         );
         if (constraints.maxWidth < 1100) {
           return Column(

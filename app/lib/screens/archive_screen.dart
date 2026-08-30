@@ -59,12 +59,34 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF242627),
-        title: Text(completing ? 'Mark as completed?' : 'Return to Archive?'),
-        content: Text(completing ? 'Move "${work.name}" into Completed Works?' : 'Mark "${work.name}" as work in progress again?'),
+        backgroundColor: const Color(0xFF1B1D1E),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: const BorderSide(color: Color(0xFF876E43), width: 1.5),
+        ),
+        title: Text(
+          completing ? 'Mark as completed?' : 'Return to Archive?',
+          style: const TextStyle(color: Color(0xFFF5EEDA), fontSize: 20, fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          completing ? 'Move "${work.name}" into Completed Works?' : 'Mark "${work.name}" as work in progress again?',
+          style: const TextStyle(color: Color(0xFFC2B7A0), fontSize: 14, height: 1.35),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(completing ? 'Complete' : 'Return')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFFC2B7A0)),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF1E1B15),
+              foregroundColor: const Color(0xFFD4AF37),
+              side: const BorderSide(color: Color(0xFFC09A52), width: 1.2),
+            ),
+            child: Text(completing ? 'Complete' : 'Return'),
+          ),
         ],
       ),
     );
@@ -101,12 +123,28 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF242627),
-        title: const Text('Delete archived work?'),
-        content: Text('Delete “${work.name}” permanently?'),
+        backgroundColor: const Color(0xFF1B1D1E),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: const BorderSide(color: Color(0xFF876E43), width: 1.5),
+        ),
+        title: const Text('Delete archived work?', style: TextStyle(color: Color(0xFFF5EEDA), fontSize: 20, fontWeight: FontWeight.w600)),
+        content: Text('Delete “${work.name}” permanently?', style: const TextStyle(color: Color(0xFFC2B7A0), fontSize: 14, height: 1.35)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), style: FilledButton.styleFrom(backgroundColor: const Color(0xFF9F4A45)), child: const Text('Delete')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFFC2B7A0)),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF2A1514),
+              foregroundColor: const Color(0xFFE57373),
+              side: const BorderSide(color: Color(0xFFC4776E), width: 1.2),
+            ),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -441,12 +479,41 @@ class _RenameWorkDialogState extends State<_RenameWorkDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: const Color(0xFF242627),
-      title: const Text('Rename archived work'),
-      content: TextField(controller: _controller, autofocus: true, decoration: const InputDecoration(labelText: 'Work name'), onSubmitted: (_) => _submit()),
+      backgroundColor: const Color(0xFF1B1D1E),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: Color(0xFF876E43), width: 1.5),
+      ),
+      title: const Text('Rename archived work', style: TextStyle(color: Color(0xFFF5EEDA), fontSize: 20, fontWeight: FontWeight.w600)),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        style: const TextStyle(color: Color(0xFFF5EEDA)),
+        decoration: const InputDecoration(
+          labelText: 'Work name',
+          labelStyle: TextStyle(color: Color(0xFFD4AF37)),
+          hintStyle: TextStyle(color: Color(0xFF80796C)),
+          border: OutlineInputBorder(),
+          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFFD4AF37), width: 1.5)),
+          enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF6E5935), width: 1.0)),
+        ),
+        onSubmitted: (_) => _submit(),
+      ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        FilledButton(onPressed: _submit, child: const Text('Rename')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          style: TextButton.styleFrom(foregroundColor: const Color(0xFFC2B7A0)),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF1E1B15),
+            foregroundColor: const Color(0xFFD4AF37),
+            side: const BorderSide(color: Color(0xFFC09A52), width: 1.2),
+          ),
+          child: const Text('Rename'),
+        ),
       ],
     );
   }
