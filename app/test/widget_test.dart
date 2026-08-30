@@ -604,8 +604,9 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
 
     await tester.enterText(find.byKey(const ValueKey('research-search-field')), 'obvious');
+    await tester.ensureVisible(find.bySemanticsLabel('Reset research filters'));
     await tester.tap(find.bySemanticsLabel('Reset research filters'));
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
 
     expect(find.text('127 results'), findsOneWidget);
     expect(find.text('or should I say'), findsOneWidget);
@@ -1200,38 +1201,48 @@ void main() {
     }
   });
 
-  test('Compliance hierarchy and approved Compliance Sets are formalized', () {
+  test('Compliance hierarchy, subtypes, and relocated comp-4 are formalized', () {
     expect(CardCategory.red.label, 'Compliance');
     expect(CardCategory.red.color, const Color(0xFFB94D4B));
 
     final tablesByName = {for (final table in languageTables) table.name: table};
     expect(tablesByName, contains('Compliance Commands'));
     expect(tablesByName, contains('Compliance Sets'));
+    expect(tablesByName, contains('Time Binds'));
 
     final commandsTable = tablesByName['Compliance Commands']!;
     final setsTable = tablesByName['Compliance Sets']!;
+    final timeBindsTable = tablesByName['Time Binds']!;
 
-    expect(commandsTable.cards, hasLength(12));
+    expect(commandsTable.cards, hasLength(11));
     expect(setsTable.cards, hasLength(2));
+    expect(timeBindsTable.cards, hasLength(9));
 
-    final expectedIds = [for (var i = 1; i <= 12; i++) 'comp-$i'];
-    expect(commandsTable.cards.map((c) => c.id), expectedIds);
+    final expectedCommandIds = ['comp-1', 'comp-2', 'comp-3', 'comp-5', 'comp-6', 'comp-7', 'comp-8', 'comp-9', 'comp-10', 'comp-11', 'comp-12'];
+    expect(commandsTable.cards.map((c) => c.id), expectedCommandIds);
     expect(commandsTable.cards.every((c) => c.category == CardCategory.red), isTrue);
 
-    expect(commandsTable.cards.map((c) => c.text), containsAll([
-      'Relax your eyes',
-      'Make yourself comfortable',
-      'Let your breathing settle',
-      'In a moment, I\'m going to ask you to relax',
-      'Take a comfortable breath',
-      'Allow your shoulders to relax',
-      'Notice the support beneath you',
-      'Let your hands rest comfortably',
-      'Take a moment to settle in',
-      'Find a comfortable position',
-      'Allow yourself to listen',
-      'Just let your eyes rest',
-    ]));
+    // Verify comp-4 relocated to Time Binds as time-9
+    final time9 = timeBindsTable.cards.firstWhere((c) => c.text == 'In a moment, I\'m going to ask you to relax');
+    expect(time9.id, 'time-9');
+    expect(time9.category, CardCategory.darkBlue);
+    expect(commandsTable.cards.map((c) => c.text), isNot(contains('In a moment, I\'m going to ask you to relax')));
+
+    // Verify Voluntary & Involuntary classifications
+    final primaryVoluntary = commandsTable.cards.where((c) => primaryComplianceSubtypeFor(c) == ComplianceSubtype.voluntary).toList();
+    final primaryInvoluntary = commandsTable.cards.where((c) => primaryComplianceSubtypeFor(c) == ComplianceSubtype.involuntary).toList();
+
+    expect(primaryVoluntary, hasLength(7));
+    expect(primaryVoluntary.map((c) => c.id), ['comp-1', 'comp-2', 'comp-5', 'comp-6', 'comp-8', 'comp-9', 'comp-10']);
+
+    expect(primaryInvoluntary, hasLength(4));
+    expect(primaryInvoluntary.map((c) => c.id), ['comp-3', 'comp-7', 'comp-11', 'comp-12']);
+
+    // Verify secondary classifications
+    expect(secondaryComplianceSubtypeFor(commandsTable.cards.firstWhere((c) => c.id == 'comp-1')), ComplianceSubtype.involuntary);
+    expect(secondaryComplianceSubtypeFor(commandsTable.cards.firstWhere((c) => c.id == 'comp-8')), ComplianceSubtype.involuntary);
+    expect(secondaryComplianceSubtypeFor(commandsTable.cards.firstWhere((c) => c.id == 'comp-3')), ComplianceSubtype.voluntary);
+    expect(secondaryComplianceSubtypeFor(commandsTable.cards.firstWhere((c) => c.id == 'comp-12')), ComplianceSubtype.voluntary);
 
     final set1 = setsTable.cards.firstWhere((c) => c.text == 'Beginning');
     expect(set1.id, 'comp-set-1');
@@ -1250,14 +1261,14 @@ void main() {
     expect(set2.fragments, hasLength(greaterThanOrEqualTo(3)));
   });
 
-  testWidgets('Research Laboratory filters distinguish Compliance Commands and Compliance Sets', (WidgetTester tester) async {
+  testWidgets('Research Laboratory filters distinguish Compliance Commands subtypes and Compliance Sets', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
 
     await tester.tap(find.byKey(const ValueKey('research-category-filter')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Compliance').last);
     await tester.pumpAndSettle();
-    expect(find.text('14 results'), findsOneWidget);
+    expect(find.text('13 results'), findsOneWidget);
     expect(find.text('Relax your eyes'), findsOneWidget);
     expect(find.text('Beginning'), findsOneWidget);
 
@@ -1270,7 +1281,30 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Compliance Commands').last);
     await tester.pumpAndSettle();
-    expect(find.text('12 results'), findsOneWidget);
+    expect(find.text('11 results'), findsOneWidget);
+
+    // Filter by Voluntary compliance subtype (includes primary Voluntary + secondary Voluntary)
+    await tester.tap(find.byKey(const ValueKey('research-compliance-subtype-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Voluntary').last);
+    await tester.pumpAndSettle();
+    expect(find.text('9 results'), findsOneWidget);
+    expect(find.text('Relax your eyes'), findsOneWidget);
+    expect(find.text('Let your breathing settle'), findsOneWidget);
+
+    // Filter by Involuntary compliance subtype (includes primary Involuntary + secondary Involuntary)
+    await tester.tap(find.byKey(const ValueKey('research-compliance-subtype-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Involuntary').last);
+    await tester.pumpAndSettle();
+    expect(find.text('6 results'), findsOneWidget);
+    expect(find.text('Relax your eyes'), findsOneWidget);
+    expect(find.text('Let your hands rest comfortably'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('research-compliance-subtype-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('All Compliance Subtypes').last);
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey('research-table-filter')));
     await tester.pumpAndSettle();

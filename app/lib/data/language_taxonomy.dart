@@ -5,9 +5,41 @@ enum ComplianceSubtype { voluntary, involuntary }
 
 extension ComplianceSubtypeDetails on ComplianceSubtype {
   String get label => switch (this) {
-        ComplianceSubtype.voluntary => 'Voluntary Compliance Commands',
-        ComplianceSubtype.involuntary => 'Involuntary Compliance Commands',
+        ComplianceSubtype.voluntary => 'Voluntary',
+        ComplianceSubtype.involuntary => 'Involuntary',
       };
+}
+
+ComplianceSubtype? primaryComplianceSubtypeFor(LanguageCard card) {
+  if (card.tableName != 'Compliance Commands' && card.category != CardCategory.red) return null;
+  if (card.visibleSubtype.toLowerCase().contains('involuntary')) {
+    return ComplianceSubtype.involuntary;
+  }
+  if (card.visibleSubtype.toLowerCase().contains('voluntary')) {
+    return ComplianceSubtype.voluntary;
+  }
+  return null;
+}
+
+ComplianceSubtype? secondaryComplianceSubtypeFor(LanguageCard card) {
+  if (card.tableName != 'Compliance Commands' && card.category != CardCategory.red) return null;
+  if (card.internalSubtypes.any((s) => s.toLowerCase().contains('involuntary'))) {
+    return ComplianceSubtype.involuntary;
+  }
+  if (card.internalSubtypes.any((s) => s.toLowerCase().contains('voluntary'))) {
+    return ComplianceSubtype.voluntary;
+  }
+  return null;
+}
+
+bool hasComplianceSubtype(LanguageCard card, String filterSubtype) {
+  if (card.tableName != 'Compliance Commands') return false;
+  if (filterSubtype == 'All Compliance Commands' || filterSubtype == 'All Compliance Subtypes') {
+    return true;
+  }
+  final primaryLabel = primaryComplianceSubtypeFor(card)?.label;
+  final secondaryLabel = secondaryComplianceSubtypeFor(card)?.label;
+  return primaryLabel == filterSubtype || secondaryLabel == filterSubtype;
 }
 
 /// Language Taxonomy v1.0 visible subtype: Notice.

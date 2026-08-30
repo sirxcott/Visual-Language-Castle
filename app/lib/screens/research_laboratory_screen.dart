@@ -18,6 +18,7 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
   String _selectedCategory = 'All Categories';
   String _selectedLinkageSubtype = 'All Linkage Subtypes';
   String _selectedEmbeddedSubtype = 'All Embedded Subtypes';
+  String _selectedComplianceSubtype = 'All Compliance Subtypes';
 
   List<LanguageCard> get _allCards => [for (final table in languageTables) ...table.cards];
 
@@ -28,13 +29,14 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
       final matchesCategory = _selectedCategory == 'All Categories' || card.category.label == _selectedCategory;
       final matchesSubtype = _selectedLinkageSubtype == 'All Linkage Subtypes' || (card.tableName == 'Linkages' && linkageSubtypeLabel(card) == _selectedLinkageSubtype);
       final matchesEmbeddedSubtype = _selectedEmbeddedSubtype == 'All Embedded Subtypes' || ((card.tableName == 'Embedded' || card.category == CardCategory.embedded) && embeddedSubtypeLabel(card) == _selectedEmbeddedSubtype);
+      final matchesComplianceSubtype = _selectedComplianceSubtype == 'All Compliance Subtypes' || ((card.tableName == 'Compliance Commands' || card.category == CardCategory.red) && hasComplianceSubtype(card, _selectedComplianceSubtype));
       final matchesSearch = query.isEmpty ||
           card.text.toLowerCase().contains(query) ||
           card.tableName.toLowerCase().contains(query) ||
           card.passage.toLowerCase().contains(query) ||
           card.reconstructedIntent.toLowerCase().contains(query) ||
           card.fragments.any((f) => f.toLowerCase().contains(query));
-      return matchesTable && matchesCategory && matchesSubtype && matchesEmbeddedSubtype && matchesSearch;
+      return matchesTable && matchesCategory && matchesSubtype && matchesEmbeddedSubtype && matchesComplianceSubtype && matchesSearch;
     }).toList();
   }
 
@@ -60,6 +62,7 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
       _selectedTable = table;
       if (table != 'All Tables' && table != 'Linkages') _selectedLinkageSubtype = 'All Linkage Subtypes';
       if (table != 'All Tables' && table != 'Embedded') _selectedEmbeddedSubtype = 'All Embedded Subtypes';
+      if (table != 'All Tables' && table != 'Compliance Commands') _selectedComplianceSubtype = 'All Compliance Subtypes';
     });
   }
 
@@ -70,6 +73,7 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
       _selectedCategory = 'All Categories';
       _selectedLinkageSubtype = 'All Linkage Subtypes';
       _selectedEmbeddedSubtype = 'All Embedded Subtypes';
+      _selectedComplianceSubtype = 'All Compliance Subtypes';
     });
     _searchFocusNode.requestFocus();
   }
@@ -95,6 +99,16 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
               if (card.tableName == 'Linkages') ...[
                 const SizedBox(height: 16),
                 _DetailLabel(label: 'LINKAGE STATUS', value: linkageSubtypeLabel(card), color: const Color(0xFFC09A52)),
+              ],
+              if (card.tableName == 'Compliance Commands') ...[
+                if (primaryComplianceSubtypeFor(card) != null) ...[
+                  const SizedBox(height: 16),
+                  _DetailLabel(label: 'PRIMARY CLASSIFICATION', value: primaryComplianceSubtypeFor(card)!.label, color: CardCategory.red.color),
+                ],
+                if (secondaryComplianceSubtypeFor(card) != null) ...[
+                  const SizedBox(height: 16),
+                  _DetailLabel(label: 'SECONDARY CLASSIFICATION', value: secondaryComplianceSubtypeFor(card)!.label, color: const Color(0xFFC09A52)),
+                ],
               ],
               if (isEmbedded) ...[
                 const SizedBox(height: 16),
@@ -245,6 +259,8 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
                       onLinkageSubtypeChanged: (value) => setState(() => _selectedLinkageSubtype = value),
                       selectedEmbeddedSubtype: _selectedEmbeddedSubtype,
                       onEmbeddedSubtypeChanged: (value) => setState(() => _selectedEmbeddedSubtype = value),
+                      selectedComplianceSubtype: _selectedComplianceSubtype,
+                      onComplianceSubtypeChanged: (value) => setState(() => _selectedComplianceSubtype = value),
                       onReset: _resetFilters,
                       searchFocusNode: _searchFocusNode,
                     ),
@@ -295,6 +311,8 @@ class _ResearchControls extends StatelessWidget {
     required this.onLinkageSubtypeChanged,
     required this.selectedEmbeddedSubtype,
     required this.onEmbeddedSubtypeChanged,
+    required this.selectedComplianceSubtype,
+    required this.onComplianceSubtypeChanged,
     required this.onReset,
     required this.searchFocusNode,
   });
@@ -308,6 +326,8 @@ class _ResearchControls extends StatelessWidget {
   final ValueChanged<String> onLinkageSubtypeChanged;
   final String selectedEmbeddedSubtype;
   final ValueChanged<String> onEmbeddedSubtypeChanged;
+  final String selectedComplianceSubtype;
+  final ValueChanged<String> onComplianceSubtypeChanged;
   final VoidCallback onReset;
   final FocusNode searchFocusNode;
 
@@ -378,8 +398,21 @@ class _ResearchControls extends StatelessWidget {
             if (value != null) onEmbeddedSubtypeChanged(value);
           },
         );
+        final complianceSubtypeFilter = DropdownButtonFormField<String>(
+          initialValue: selectedComplianceSubtype,
+          isExpanded: true,
+          key: const ValueKey('research-compliance-subtype-filter'),
+          decoration: const InputDecoration(labelText: 'Compliance Subtype', border: OutlineInputBorder()),
+          items: ['All Compliance Subtypes', 'Voluntary', 'Involuntary']
+              .map((subtype) => DropdownMenuItem(value: subtype, child: Text(subtype, maxLines: 1, overflow: TextOverflow.ellipsis)))
+              .toList(),
+          onChanged: (value) {
+            if (value != null) onComplianceSubtypeChanged(value);
+          },
+        );
         final showLinkageSubtype = selectedTable == 'All Tables' || selectedTable == 'Linkages';
         final showEmbeddedSubtype = selectedTable == 'All Tables' || selectedTable == 'Embedded' || selectedCategory == 'Embedded';
+        final showComplianceSubtype = selectedTable == 'All Tables' || selectedTable == 'Compliance Commands' || selectedCategory == 'Compliance';
         final reset = Semantics(
           button: true,
           label: 'Reset research filters',
@@ -396,6 +429,7 @@ class _ResearchControls extends StatelessWidget {
               categoryFilter,
               if (showLinkageSubtype) ...[const SizedBox(height: 12), linkageSubtypeFilter],
               if (showEmbeddedSubtype) ...[const SizedBox(height: 12), embeddedSubtypeFilter],
+              if (showComplianceSubtype) ...[const SizedBox(height: 12), complianceSubtypeFilter],
               const SizedBox(height: 8),
               reset,
             ],
@@ -404,13 +438,17 @@ class _ResearchControls extends StatelessWidget {
         return Column(
           children: [
             Row(children: [Expanded(child: search), const SizedBox(width: 14), SizedBox(width: 220, child: filter), const SizedBox(width: 14), SizedBox(width: 220, child: categoryFilter)]),
-            if (showLinkageSubtype || showEmbeddedSubtype) ...[
+            if (showLinkageSubtype || showEmbeddedSubtype || showComplianceSubtype) ...[
               const SizedBox(height: 12),
-              Row(children: [
-                if (showLinkageSubtype) SizedBox(width: 220, child: linkageSubtypeFilter),
-                if (showLinkageSubtype && showEmbeddedSubtype) const SizedBox(width: 14),
-                if (showEmbeddedSubtype) SizedBox(width: 220, child: embeddedSubtypeFilter),
-              ]),
+              Wrap(
+                spacing: 14,
+                runSpacing: 12,
+                children: [
+                  if (showLinkageSubtype) SizedBox(width: 220, child: linkageSubtypeFilter),
+                  if (showEmbeddedSubtype) SizedBox(width: 220, child: embeddedSubtypeFilter),
+                  if (showComplianceSubtype) SizedBox(width: 220, child: complianceSubtypeFilter),
+                ],
+              ),
             ],
             Align(alignment: Alignment.centerLeft, child: reset),
           ],
@@ -452,6 +490,10 @@ class _ResearchResultCard extends StatelessWidget {
               if (card.tableName == 'Embedded' || card.category == CardCategory.embedded) ...[
                 const SizedBox(height: 5),
                 Text(embeddedSubtypeLabel(card), overflow: TextOverflow.ellipsis, style: TextStyle(color: CardCategory.embedded.color, fontSize: 10)),
+              ],
+              if (card.tableName == 'Compliance Commands') ...[
+                const SizedBox(height: 5),
+                Text(primaryComplianceSubtypeFor(card)?.label ?? '', overflow: TextOverflow.ellipsis, style: TextStyle(color: card.category.color, fontSize: 10)),
               ],
               if (card.tableName == 'Compliance Sets') ...[
                 const SizedBox(height: 5),
