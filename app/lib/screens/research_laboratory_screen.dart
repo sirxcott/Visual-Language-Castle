@@ -86,8 +86,27 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF242627),
-        title: Text(card.text, style: const TextStyle(color: Color(0xFFF0E6D2), fontSize: 20)),
+        backgroundColor: const Color(0xFF1B1D1E),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: const BorderSide(color: Color(0xFF876E43), width: 1.5),
+        ),
+        title: Row(
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              margin: const EdgeInsets.only(right: 10),
+              decoration: BoxDecoration(color: card.category.color, shape: BoxShape.circle),
+            ),
+            Expanded(
+              child: Text(
+                card.text,
+                style: const TextStyle(color: Color(0xFFF5EEDA), fontSize: 20, fontWeight: FontWeight.w600, letterSpacing: 0.3),
+              ),
+            ),
+          ],
+        ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -98,7 +117,7 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
               _DetailLabel(label: 'CATEGORY', value: card.category.label, color: card.category.color),
               if (card.tableName == 'Linkages') ...[
                 const SizedBox(height: 16),
-                _DetailLabel(label: 'LINKAGE STATUS', value: linkageSubtypeLabel(card), color: const Color(0xFFC09A52)),
+                _DetailLabel(label: 'LINKAGE STATUS', value: linkageSubtypeLabel(card), color: const Color(0xFFD4AF37)),
               ],
               if (card.tableName == 'Compliance Commands') ...[
                 if (primaryComplianceSubtypeFor(card) != null) ...[
@@ -107,7 +126,7 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
                 ],
                 if (secondaryComplianceSubtypeFor(card) != null) ...[
                   const SizedBox(height: 16),
-                  _DetailLabel(label: 'SECONDARY CLASSIFICATION', value: secondaryComplianceSubtypeFor(card)!.label, color: const Color(0xFFC09A52)),
+                  _DetailLabel(label: 'SECONDARY CLASSIFICATION', value: secondaryComplianceSubtypeFor(card)!.label, color: const Color(0xFFD4AF37)),
                 ],
               ],
               if (isEmbedded) ...[
@@ -120,7 +139,7 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
                 const SizedBox(height: 16),
                 _DetailLabel(label: 'COMMAND COUNT', value: '${card.fragments.length} commands'),
                 const SizedBox(height: 16),
-                const Text('COMMANDS IN EXACT ORDER', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 1.5)),
+                const Text('COMMANDS IN EXACT ORDER', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 10, letterSpacing: 1.5, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 6),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,7 +151,7 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('${i + 1}. ', style: const TextStyle(color: Color(0xFF80796C), fontSize: 13)),
-                            Expanded(child: Text(card.fragments[i], style: const TextStyle(color: Color(0xFFE8C85A), fontSize: 13, fontWeight: FontWeight.w600))),
+                            Expanded(child: Text(card.fragments[i], style: const TextStyle(color: Color(0xFFF1D060), fontSize: 13, fontWeight: FontWeight.w600))),
                           ],
                         ),
                       ),
@@ -141,16 +160,16 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
               ],
               if (isDistributed) ...[
                 const SizedBox(height: 16),
-                const Text('FULL CARRIER PASSAGE', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 1.5)),
+                const Text('FULL CARRIER PASSAGE', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 10, letterSpacing: 1.5, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 6),
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: const Color(0xFF161819), borderRadius: BorderRadius.circular(6), border: Border.all(color: const Color(0xFF38352F))),
+                  decoration: BoxDecoration(color: const Color(0xFF121415), borderRadius: BorderRadius.circular(6), border: Border.all(color: const Color(0xFF38352F))),
                   child: _buildHighlightedPassage(card.passage, card.fragments),
                 ),
                 const SizedBox(height: 16),
-                const Text('COMMAND FRAGMENTS IN ORDER', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 1.5)),
+                const Text('COMMAND FRAGMENTS IN ORDER', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 10, letterSpacing: 1.5, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 6),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,21 +181,27 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('${i + 1}. ', style: const TextStyle(color: Color(0xFF80796C), fontSize: 13)),
-                            Expanded(child: Text(card.fragments[i], style: const TextStyle(color: Color(0xFFE8C85A), fontSize: 13, fontWeight: FontWeight.w600))),
+                            Expanded(child: Text(card.fragments[i], style: const TextStyle(color: Color(0xFFF1D060), fontSize: 13, fontWeight: FontWeight.w600))),
                           ],
                         ),
                       ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                _DetailLabel(label: 'RECONSTRUCTED COMMAND / INTENT', value: card.reconstructedIntent, color: const Color(0xFFE8C85A)),
+                _DetailLabel(label: 'RECONSTRUCTED COMMAND / INTENT', value: card.reconstructedIntent, color: const Color(0xFFF1D060)),
               ],
               const SizedBox(height: 16),
               _DetailLabel(label: 'REFERENCE NOTE', value: card.referenceNote.isEmpty ? 'No reference note supplied.' : card.referenceNote),
             ],
           ),
         ),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFFD4AF37)),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }
@@ -222,59 +247,64 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF1B1D1E), Color(0xFF0A0B0C)]),
-        ),
-        child: SafeArea(
-          child: Scrollbar(
-            thumbVisibility: true,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(36),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 980),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                    Row(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const CustomPaint(painter: _ResearchLabPainter()),
+          SafeArea(
+            child: Scrollbar(
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1020),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        IconButton(tooltip: 'Return to Gallery Hall', onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.arrow_back_rounded)),
-                        const SizedBox(width: 8),
-                        const Text('RESEARCH', style: TextStyle(color: Color(0xFFC09A52), fontSize: 12, letterSpacing: 3.5)),
+                        Row(
+                          children: [
+                            IconButton(
+                              tooltip: 'Return to Gallery Hall',
+                              onPressed: () => Navigator.of(context).pop(),
+                              icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFFD4AF37)),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text('RESEARCH', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 3.5)),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        const Text('Research Laboratory', style: TextStyle(color: Color(0xFFF5EEDA), fontSize: 38, fontWeight: FontWeight.w400, letterSpacing: 0.8)),
+                        const SizedBox(height: 8),
+                        const Text('Explore the language collection across all tables.', style: TextStyle(color: Color(0xFFC2B7A0), fontSize: 16)),
+                        const SizedBox(height: 28),
+                        _ResearchControls(
+                          searchController: _searchController,
+                          selectedTable: _selectedTable,
+                          onTableChanged: _changeTable,
+                          selectedCategory: _selectedCategory,
+                          onCategoryChanged: (value) => setState(() => _selectedCategory = value),
+                          selectedLinkageSubtype: _selectedLinkageSubtype,
+                          onLinkageSubtypeChanged: (value) => setState(() => _selectedLinkageSubtype = value),
+                          selectedEmbeddedSubtype: _selectedEmbeddedSubtype,
+                          onEmbeddedSubtypeChanged: (value) => setState(() => _selectedEmbeddedSubtype = value),
+                          selectedComplianceSubtype: _selectedComplianceSubtype,
+                          onComplianceSubtypeChanged: (value) => setState(() => _selectedComplianceSubtype = value),
+                          onReset: _resetFilters,
+                          searchFocusNode: _searchFocusNode,
+                        ),
+                        const SizedBox(height: 20),
+                        Text('${_filteredCards.length} results', key: const ValueKey('research-result-count'), style: const TextStyle(color: Color(0xFF90887A), fontSize: 13, fontWeight: FontWeight.w500)),
+                        const SizedBox(height: 12),
+                        _buildResults(),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    const Text('Research Laboratory', style: TextStyle(color: Color(0xFFF1E7D0), fontSize: 38)),
-                    const SizedBox(height: 8),
-                    const Text('Explore the language collection across all tables.', style: TextStyle(color: Color(0xFFA9A294), fontSize: 16)),
-                    const SizedBox(height: 28),
-                    _ResearchControls(
-                      searchController: _searchController,
-                      selectedTable: _selectedTable,
-                      onTableChanged: _changeTable,
-                      selectedCategory: _selectedCategory,
-                      onCategoryChanged: (value) => setState(() => _selectedCategory = value),
-                      selectedLinkageSubtype: _selectedLinkageSubtype,
-                      onLinkageSubtypeChanged: (value) => setState(() => _selectedLinkageSubtype = value),
-                      selectedEmbeddedSubtype: _selectedEmbeddedSubtype,
-                      onEmbeddedSubtypeChanged: (value) => setState(() => _selectedEmbeddedSubtype = value),
-                      selectedComplianceSubtype: _selectedComplianceSubtype,
-                      onComplianceSubtypeChanged: (value) => setState(() => _selectedComplianceSubtype = value),
-                      onReset: _resetFilters,
-                      searchFocusNode: _searchFocusNode,
-                    ),
-                    const SizedBox(height: 20),
-                    Text('${_filteredCards.length} results', key: const ValueKey('research-result-count'), style: const TextStyle(color: Color(0xFF80796C), fontSize: 12)),
-                    const SizedBox(height: 10),
-                    _buildResults(),
-                    ],
                   ),
                 ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -458,48 +488,106 @@ class _ResearchControls extends StatelessWidget {
   }
 }
 
-class _ResearchResultCard extends StatelessWidget {
+class _ResearchResultCard extends StatefulWidget {
   const _ResearchResultCard({required this.card, required this.onTap});
 
   final LanguageCard card;
   final VoidCallback onTap;
 
   @override
+  State<_ResearchResultCard> createState() => _ResearchResultCardState();
+}
+
+class _ResearchResultCardState extends State<_ResearchResultCard> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    final color = card.category.color;
+    final color = widget.card.category.color;
+    final card = widget.card;
+
     return Semantics(
       button: true,
       label: 'Open research details for ${card.text}',
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(15, 13, 15, 12),
-          decoration: BoxDecoration(color: const Color(0xFF151718), border: Border.all(color: color.withValues(alpha: 0.75)), boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 10, offset: Offset(0, 4))]),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(card.text, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFF0E6D2), fontSize: 16, height: 1.25)),
-              const Spacer(),
-              Text(card.tableName, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFA9A294), fontSize: 12)),
-              const SizedBox(height: 6),
-              Row(children: [Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)), const SizedBox(width: 7), Flexible(child: Text(card.category.label, overflow: TextOverflow.ellipsis, style: TextStyle(color: color, fontSize: 11))), const SizedBox(width: 8), const Icon(Icons.open_in_new_rounded, size: 15, color: Color(0xFF80796C))]),
-              if (card.tableName == 'Linkages') ...[
-                const SizedBox(height: 5),
-                Text(linkageSubtypeLabel(card), overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFC09A52), fontSize: 10)),
-              ],
-              if (card.tableName == 'Embedded' || card.category == CardCategory.embedded) ...[
-                const SizedBox(height: 5),
-                Text(embeddedSubtypeLabel(card), overflow: TextOverflow.ellipsis, style: TextStyle(color: CardCategory.embedded.color, fontSize: 10)),
-              ],
-              if (card.tableName == 'Compliance Commands') ...[
-                const SizedBox(height: 5),
-                Text(primaryComplianceSubtypeFor(card)?.label ?? '', overflow: TextOverflow.ellipsis, style: TextStyle(color: card.category.color, fontSize: 10)),
-              ],
-              if (card.tableName == 'Compliance Sets') ...[
-                const SizedBox(height: 5),
-                Text('${card.fragments.length} commands in sequence', overflow: TextOverflow.ellipsis, style: TextStyle(color: card.category.color, fontSize: 10)),
-              ],
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          decoration: BoxDecoration(
+            color: const Color(0xFF161819),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: _hovered ? color : color.withValues(alpha: 0.65),
+              width: _hovered ? 1.8 : 1.0,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: _hovered ? color.withValues(alpha: 0.25) : Colors.black87,
+                blurRadius: _hovered ? 14 : 8,
+                offset: Offset(0, _hovered ? 4 : 2),
+              ),
             ],
+          ),
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: BorderRadius.circular(4),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 11),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    card.text,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Color(0xFFF5EEDA), fontSize: 15, height: 1.25, fontWeight: FontWeight.w500),
+                  ),
+                  const Spacer(),
+                  Text(card.tableName, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFA9A294), fontSize: 11)),
+                  const SizedBox(height: 5),
+                  Row(
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.6), blurRadius: 4)],
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          card.category.label,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Icon(Icons.open_in_new_rounded, size: 14, color: Color(0xFF80796C)),
+                    ],
+                  ),
+                  if (card.tableName == 'Linkages') ...[
+                    const SizedBox(height: 4),
+                    Text(linkageSubtypeLabel(card), overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 10)),
+                  ],
+                  if (card.tableName == 'Embedded' || card.category == CardCategory.embedded) ...[
+                    const SizedBox(height: 4),
+                    Text(embeddedSubtypeLabel(card), overflow: TextOverflow.ellipsis, style: TextStyle(color: CardCategory.embedded.color, fontSize: 10)),
+                  ],
+                  if (card.tableName == 'Compliance Commands') ...[
+                    const SizedBox(height: 4),
+                    Text(primaryComplianceSubtypeFor(card)?.label ?? '', overflow: TextOverflow.ellipsis, style: TextStyle(color: card.category.color, fontSize: 10)),
+                  ],
+                  if (card.tableName == 'Compliance Sets') ...[
+                    const SizedBox(height: 4),
+                    Text('${card.fragments.length} commands in sequence', overflow: TextOverflow.ellipsis, style: TextStyle(color: card.category.color, fontSize: 10)),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -516,6 +604,81 @@ class _DetailLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: const TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 1.5)), const SizedBox(height: 5), Text(value, style: TextStyle(color: color ?? const Color(0xFFE0D3B8), fontSize: 14, height: 1.35))]);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 10, letterSpacing: 1.5, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 5),
+        Text(
+          value,
+          style: TextStyle(color: color ?? const Color(0xFFF5EEDA), fontSize: 14, height: 1.35),
+        ),
+      ],
+    );
   }
+}
+
+class _ResearchLabPainter extends CustomPainter {
+  const _ResearchLabPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Base library study background gradient
+    final bg = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(0, -0.2),
+        radius: 1.15,
+        colors: const [
+          Color(0xFF202324),
+          Color(0xFF141617),
+          Color(0xFF0A0B0C),
+          Color(0xFF040405),
+        ],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, bg);
+
+    // Warm ambient study desk lighting
+    final deskGlow = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(0, -0.4),
+        radius: 0.75,
+        colors: [
+          const Color(0xFFD4A325).withValues(alpha: 0.09),
+          Colors.transparent,
+        ],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, deskGlow);
+
+    // Subtle stone coursing lines
+    final strokePaint = Paint()
+      ..color = const Color(0x182C2822)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    const blockHeight = 64.0;
+    const blockWidth = 100.0;
+
+    for (var row = 0; row < size.height / blockHeight + 1; row++) {
+      final y = row * blockHeight;
+      final offset = row.isEven ? 0.0 : blockWidth / 2;
+      for (var col = -1; col < size.width / blockWidth + 1; col++) {
+        final x = col * blockWidth + offset;
+        canvas.drawRect(Rect.fromLTWH(x, y, blockWidth - 2, blockHeight - 2), strokePaint);
+      }
+    }
+
+    // Outer vignette
+    final vignette = Paint()
+      ..shader = RadialGradient(
+        colors: [Colors.transparent, Colors.black.withValues(alpha: 0.82)],
+        stops: const [0.5, 1.0],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, vignette);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

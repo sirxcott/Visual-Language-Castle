@@ -130,76 +130,292 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF1B1D1E), Color(0xFF0A0B0C)])),
-        child: SafeArea(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 980),
-              child: Padding(
-                padding: const EdgeInsets.all(36),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        IconButton(tooltip: 'Return to Gallery Hall', onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.arrow_back_rounded)),
-                        const SizedBox(width: 8),
-                        const Text('ARCHIVE', style: TextStyle(color: Color(0xFFC09A52), fontSize: 12, letterSpacing: 3.5)),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    const Text('Archive', style: TextStyle(color: Color(0xFFF1E7D0), fontSize: 38)),
-                    const SizedBox(height: 8),
-                    const Text('Saved arrangements from the working wall.', style: TextStyle(color: Color(0xFFA9A294), fontSize: 16)),
-                    const SizedBox(height: 30),
-                    Expanded(child: _buildWorks()),
-                  ],
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const CustomPaint(painter: _ArchiveRoomPainter()),
+          SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 980),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          IconButton(
+                            tooltip: 'Return to Gallery Hall',
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFFD4AF37)),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text('ARCHIVE', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 3.5)),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      const Text('Archive', style: TextStyle(color: Color(0xFFF5EEDA), fontSize: 38, fontWeight: FontWeight.w400, letterSpacing: 0.8)),
+                      const SizedBox(height: 8),
+                      const Text('Saved arrangements from the working wall.', style: TextStyle(color: Color(0xFFC2B7A0), fontSize: 16)),
+                      const SizedBox(height: 28),
+                      Expanded(child: _buildWorks()),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildWorks() {
-    if (_isLoading) return const Center(child: CircularProgressIndicator(color: Color(0xFFC09A52)));
+    if (_isLoading) return const Center(child: CircularProgressIndicator(color: Color(0xFFD4AF37)));
     if (_works.isEmpty) {
-      return const Center(child: Text('No archived works yet.', style: TextStyle(color: Color(0xFF80796C), fontSize: 16)));
+      return Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 22),
+          decoration: BoxDecoration(
+            color: const Color(0xFF141617).withValues(alpha: 0.85),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFF6E5935).withValues(alpha: 0.6), width: 1.5),
+            boxShadow: const [BoxShadow(color: Colors.black87, blurRadius: 20)],
+          ),
+          child: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.inventory_2_outlined, size: 36, color: Color(0xFFD4AF37)),
+              SizedBox(height: 12),
+              Text('No archived works yet.', style: TextStyle(color: Color(0xFFF5EEDA), fontSize: 17, fontWeight: FontWeight.w500)),
+              SizedBox(height: 6),
+              Text('Save wall arrangements from the Practice Room to view them here.', style: TextStyle(color: Color(0xFFA9A294), fontSize: 13)),
+            ],
+          ),
+        ),
+      );
     }
     return ListView.separated(
       itemCount: _works.length,
       separatorBuilder: (_, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final work = _works[index];
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          decoration: BoxDecoration(color: const Color(0xFF151718), border: Border.all(color: const Color(0xFF645238))),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final actions = [
-                IconButton(tooltip: 'Open ${work.name}', onPressed: () => _openWork(work), icon: const Icon(Icons.open_in_new_rounded)),
-                IconButton(tooltip: work.isCompleted ? 'Return "${work.name}" to Archive' : 'Mark "${work.name}" complete', onPressed: () => _changeCompletion(work), icon: Icon(work.isCompleted ? Icons.undo_rounded : Icons.check_circle_outline, color: work.isCompleted ? const Color(0xFFC09A52) : const Color(0xFF5D9A78))),
-                IconButton(tooltip: 'Rename ${work.name}', onPressed: () => _renameWork(work), icon: const Icon(Icons.edit_outlined)),
-                IconButton(tooltip: 'Delete ${work.name}', onPressed: () => _deleteWork(work), icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFC4776E))),
-              ];
-              final details = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [Flexible(child: Text(work.name, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFE0D3B8), fontSize: 17))), if (work.isCompleted) ...[const SizedBox(width: 10), const Icon(Icons.check_circle_outline, size: 16, color: Color(0xFF5D9A78)), const SizedBox(width: 5), const Text('Completed', style: TextStyle(color: Color(0xFF5D9A78), fontSize: 11))]]),
-                const SizedBox(height: 5),
-                Text('${_savedDate(work.savedAt)}  ·  ${work.cards.length} cards', style: const TextStyle(color: Color(0xFF80796C), fontSize: 12)),
-              ]);
-              if (constraints.maxWidth < 620) {
-                return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [const Icon(Icons.auto_awesome_mosaic_outlined, color: Color(0xFFC09A52), size: 28), const SizedBox(width: 14), Expanded(child: details)]), Wrap(children: actions)]);
-              }
-              return Row(children: [const Icon(Icons.auto_awesome_mosaic_outlined, color: Color(0xFFC09A52), size: 28), const SizedBox(width: 14), Expanded(child: details), ...actions]);
-            },
-          ),
+        return _ArchiveItemTile(
+          work: work,
+          savedDateText: _savedDate(work.savedAt),
+          onOpen: () => _openWork(work),
+          onToggleComplete: () => _changeCompletion(work),
+          onRename: () => _renameWork(work),
+          onDelete: () => _deleteWork(work),
         );
       },
     );
   }
+}
+
+class _ArchiveItemTile extends StatefulWidget {
+  const _ArchiveItemTile({
+    required this.work,
+    required this.savedDateText,
+    required this.onOpen,
+    required this.onToggleComplete,
+    required this.onRename,
+    required this.onDelete,
+  });
+
+  final ArchivedWork work;
+  final String savedDateText;
+  final VoidCallback onOpen;
+  final VoidCallback onToggleComplete;
+  final VoidCallback onRename;
+  final VoidCallback onDelete;
+
+  @override
+  State<_ArchiveItemTile> createState() => _ArchiveItemTileState();
+}
+
+class _ArchiveItemTileState extends State<_ArchiveItemTile> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    const brass = Color(0xFFC09A52);
+    const gold = Color(0xFFD4AF37);
+    final work = widget.work;
+
+    final actions = [
+      IconButton(tooltip: 'Open ${work.name}', onPressed: widget.onOpen, icon: Icon(Icons.open_in_new_rounded, color: _hovered ? gold : brass)),
+      IconButton(
+        tooltip: work.isCompleted ? 'Return "${work.name}" to Archive' : 'Mark "${work.name}" complete',
+        onPressed: widget.onToggleComplete,
+        icon: Icon(work.isCompleted ? Icons.undo_rounded : Icons.check_circle_outline, color: work.isCompleted ? gold : const Color(0xFF5D9A78)),
+      ),
+      IconButton(tooltip: 'Rename ${work.name}', onPressed: widget.onRename, icon: const Icon(Icons.edit_outlined, color: Color(0xFFB5ADA0))),
+      IconButton(tooltip: 'Delete ${work.name}', onPressed: widget.onDelete, icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFC4776E))),
+    ];
+
+    final details = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Flexible(
+              child: Text(
+                work.name,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _hovered ? const Color(0xFFFFFFFF) : const Color(0xFFF5EEDA),
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ),
+            if (work.isCompleted) ...[
+              const SizedBox(width: 10),
+              const Icon(Icons.check_circle_rounded, size: 16, color: Color(0xFF5D9A78)),
+              const SizedBox(width: 5),
+              const Text('Completed', style: TextStyle(color: Color(0xFF5D9A78), fontSize: 11, fontWeight: FontWeight.w600)),
+            ],
+          ],
+        ),
+        const SizedBox(height: 5),
+        Text(
+          '${widget.savedDateText}  ·  ${work.cards.length} cards  ·  ${work.connections.length} ${work.connections.length == 1 ? 'connection' : 'connections'}',
+          style: const TextStyle(color: Color(0xFF90887A), fontSize: 12),
+        ),
+      ],
+    );
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF161819),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: _hovered ? gold : const Color(0xFF645238),
+            width: _hovered ? 1.5 : 1.0,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: _hovered ? gold.withValues(alpha: 0.22) : Colors.black87,
+              blurRadius: _hovered ? 14 : 8,
+              offset: Offset(0, _hovered ? 4 : 2),
+            ),
+          ],
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth < 620) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF101213),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: brass.withValues(alpha: 0.5), width: 1),
+                        ),
+                        child: Icon(Icons.auto_awesome_mosaic_outlined, color: _hovered ? gold : brass, size: 22),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(child: details),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(children: actions),
+                ],
+              );
+            }
+            return Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF101213),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: brass.withValues(alpha: 0.5), width: 1),
+                  ),
+                  child: Icon(Icons.auto_awesome_mosaic_outlined, color: _hovered ? gold : brass, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(child: details),
+                ...actions,
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _ArchiveRoomPainter extends CustomPainter {
+  const _ArchiveRoomPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final bg = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(0, -0.2),
+        radius: 1.15,
+        colors: const [
+          Color(0xFF202223),
+          Color(0xFF141617),
+          Color(0xFF0A0B0C),
+          Color(0xFF040405),
+        ],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, bg);
+
+    final shelfGlow = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(0, -0.5),
+        radius: 0.8,
+        colors: [
+          const Color(0xFFD4A325).withValues(alpha: 0.08),
+          Colors.transparent,
+        ],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, shelfGlow);
+
+    final stoneStroke = Paint()
+      ..color = const Color(0x182C2822)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    const blockHeight = 64.0;
+    const blockWidth = 100.0;
+
+    for (var row = 0; row < size.height / blockHeight + 1; row++) {
+      final y = row * blockHeight;
+      final offset = row.isEven ? 0.0 : blockWidth / 2;
+      for (var col = -1; col < size.width / blockWidth + 1; col++) {
+        final x = col * blockWidth + offset;
+        canvas.drawRect(Rect.fromLTWH(x, y, blockWidth - 2, blockHeight - 2), stoneStroke);
+      }
+    }
+
+    final vignette = Paint()
+      ..shader = RadialGradient(
+        colors: [Colors.transparent, Colors.black.withValues(alpha: 0.82)],
+        stops: const [0.5, 1.0],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, vignette);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _RenameWorkDialog extends StatefulWidget {

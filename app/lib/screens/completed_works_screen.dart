@@ -60,40 +60,75 @@ class _CompletedWorksScreenState extends State<CompletedWorksScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF1B1D1E), Color(0xFF0A0B0C)])),
-        child: SafeArea(
-          child: Scrollbar(
-            thumbVisibility: true,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(36),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 980),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(children: [IconButton(tooltip: 'Return to Gallery Hall', onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.arrow_back_rounded)), const SizedBox(width: 8), const Text('COMPLETED WORKS', style: TextStyle(color: Color(0xFFC09A52), fontSize: 12, letterSpacing: 3.5))]),
-                      const SizedBox(height: 10),
-                      const Text('Completed Works', style: TextStyle(color: Color(0xFFF1E7D0), fontSize: 38)),
-                      const SizedBox(height: 8),
-                      const Text('Finished arrangements from your archive.', style: TextStyle(color: Color(0xFFA9A294), fontSize: 16)),
-                      const SizedBox(height: 30),
-                      _buildWorks(),
-                    ],
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const CustomPaint(painter: _CompletedWorksRoomPainter()),
+          SafeArea(
+            child: Scrollbar(
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 980),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            IconButton(
+                              tooltip: 'Return to Gallery Hall',
+                              onPressed: () => Navigator.of(context).pop(),
+                              icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFFD4AF37)),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text('COMPLETED WORKS', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 3.5)),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        const Text('Completed Works', style: TextStyle(color: Color(0xFFF5EEDA), fontSize: 38, fontWeight: FontWeight.w400, letterSpacing: 0.8)),
+                        const SizedBox(height: 8),
+                        const Text('Finished arrangements from your archive.', style: TextStyle(color: Color(0xFFC2B7A0), fontSize: 16)),
+                        const SizedBox(height: 28),
+                        _buildWorks(),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildWorks() {
-    if (_isLoading) return const SizedBox(height: 260, child: Center(child: CircularProgressIndicator(color: Color(0xFFC09A52))));
-    if (_works.isEmpty) return const SizedBox(height: 260, child: Center(child: Text('No completed works yet.', style: TextStyle(color: Color(0xFF80796C), fontSize: 16))));
+    if (_isLoading) return const SizedBox(height: 260, child: Center(child: CircularProgressIndicator(color: Color(0xFFD4AF37))));
+    if (_works.isEmpty) {
+      return Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 22),
+          decoration: BoxDecoration(
+            color: const Color(0xFF141617).withValues(alpha: 0.85),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFF6E5935).withValues(alpha: 0.6), width: 1.5),
+            boxShadow: const [BoxShadow(color: Colors.black87, blurRadius: 20)],
+          ),
+          child: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.collections_bookmark_outlined, size: 36, color: Color(0xFFD4AF37)),
+              SizedBox(height: 12),
+              Text('No completed works yet.', style: TextStyle(color: Color(0xFFF5EEDA), fontSize: 17, fontWeight: FontWeight.w500)),
+              SizedBox(height: 6),
+              Text('Mark archived wall arrangements as completed to showcase them here.', style: TextStyle(color: Color(0xFFA9A294), fontSize: 13)),
+            ],
+          ),
+        ),
+      );
+    }
     return Column(
       children: [
         for (var index = 0; index < _works.length; index++) ...[
@@ -105,7 +140,7 @@ class _CompletedWorksScreenState extends State<CompletedWorksScreen> {
   }
 }
 
-class _CompletedWorkItem extends StatelessWidget {
+class _CompletedWorkItem extends StatefulWidget {
   const _CompletedWorkItem({required this.work, required this.completionDate, required this.onOpen});
 
   final ArchivedWork work;
@@ -113,25 +148,193 @@ class _CompletedWorkItem extends StatelessWidget {
   final VoidCallback onOpen;
 
   @override
+  State<_CompletedWorkItem> createState() => _CompletedWorkItemState();
+}
+
+class _CompletedWorkItemState extends State<_CompletedWorkItem> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      decoration: BoxDecoration(color: const Color(0xFF151718), border: Border.all(color: const Color(0xFF645238))),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final details = Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    const brass = Color(0xFFC09A52);
+    const gold = Color(0xFFD4AF37);
+    final work = widget.work;
+
+    final details = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Flexible(
+              child: Text(
+                work.name,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _hovered ? const Color(0xFFFFFFFF) : const Color(0xFFF5EEDA),
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFF5D9A78).withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: const Color(0xFF5D9A78), width: 1),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF5D9A78)),
+                  SizedBox(width: 4),
+                  Text('FINISHED', style: TextStyle(color: Color(0xFF5D9A78), fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.0)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 5),
+        Text(
+          'Completed: ${widget.completionDate}  ·  ${work.cards.length} cards  ·  ${work.connections.length} ${work.connections.length == 1 ? 'connection' : 'connections'}',
+          style: const TextStyle(color: Color(0xFF90887A), fontSize: 12),
+        ),
+      ],
+    );
+
+    final action = IconButton(
+      tooltip: 'Open ${work.name}',
+      onPressed: widget.onOpen,
+      icon: Icon(Icons.open_in_new_rounded, color: _hovered ? gold : brass),
+    );
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF161819),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: _hovered ? gold : const Color(0xFF876E43),
+            width: _hovered ? 1.8 : 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: _hovered ? gold.withValues(alpha: 0.28) : Colors.black87,
+              blurRadius: _hovered ? 16 : 8,
+              offset: Offset(0, _hovered ? 4 : 2),
+            ),
+          ],
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth < 620) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF101213),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: gold.withValues(alpha: 0.6), width: 1),
+                        ),
+                        child: Icon(Icons.collections_bookmark_outlined, color: _hovered ? gold : brass, size: 22),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(child: details),
+                    ],
+                  ),
+                  Align(alignment: Alignment.centerRight, child: action),
+                ],
+              );
+            }
+            return Row(
               children: [
-                Text(work.name, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFE0D3B8), fontSize: 17)),
-                const SizedBox(height: 5),
-                Text('$completionDate  ·  ${work.cards.length} cards  ·  ${work.connections.length} ${work.connections.length == 1 ? 'connection' : 'connections'}', style: const TextStyle(color: Color(0xFF80796C), fontSize: 12)),
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF101213),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: gold.withValues(alpha: 0.6), width: 1),
+                  ),
+                  child: Icon(Icons.collections_bookmark_outlined, color: _hovered ? gold : brass, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(child: details),
+                action,
               ],
             );
-          final action = IconButton(tooltip: 'Open ${work.name}', onPressed: onOpen, icon: const Icon(Icons.open_in_new_rounded));
-          if (constraints.maxWidth < 620) return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [const Icon(Icons.collections_bookmark_outlined, color: Color(0xFFC09A52), size: 28), const SizedBox(width: 14), Expanded(child: details)]), Align(alignment: Alignment.centerRight, child: action)]);
-          return Row(children: [const Icon(Icons.collections_bookmark_outlined, color: Color(0xFFC09A52), size: 28), const SizedBox(width: 14), Expanded(child: details), action]);
-        },
+          },
+        ),
       ),
     );
   }
+}
+
+class _CompletedWorksRoomPainter extends CustomPainter {
+  const _CompletedWorksRoomPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final bg = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(0, -0.2),
+        radius: 1.15,
+        colors: const [
+          Color(0xFF222425),
+          Color(0xFF141617),
+          Color(0xFF0A0B0C),
+          Color(0xFF040405),
+        ],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, bg);
+
+    final hallGlow = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(0, -0.5),
+        radius: 0.8,
+        colors: [
+          const Color(0xFFD4A325).withValues(alpha: 0.10),
+          Colors.transparent,
+        ],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, hallGlow);
+
+    final stoneStroke = Paint()
+      ..color = const Color(0x182C2822)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    const blockHeight = 64.0;
+    const blockWidth = 100.0;
+
+    for (var row = 0; row < size.height / blockHeight + 1; row++) {
+      final y = row * blockHeight;
+      final offset = row.isEven ? 0.0 : blockWidth / 2;
+      for (var col = -1; col < size.width / blockWidth + 1; col++) {
+        final x = col * blockWidth + offset;
+        canvas.drawRect(Rect.fromLTWH(x, y, blockWidth - 2, blockHeight - 2), stoneStroke);
+      }
+    }
+
+    final vignette = Paint()
+      ..shader = RadialGradient(
+        colors: [Colors.transparent, Colors.black.withValues(alpha: 0.82)],
+        stops: const [0.5, 1.0],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, vignette);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
