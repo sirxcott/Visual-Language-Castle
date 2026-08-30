@@ -156,6 +156,9 @@ class ArchiveStorage {
     if (name == 'yellow' || name == 'noticing' || name == 'notice') {
       return CardCategory.notice;
     }
+    if (name == 'complianceSet' || name == 'compliance') {
+      return CardCategory.red;
+    }
     return CardCategory.values.byName(name);
   }
 

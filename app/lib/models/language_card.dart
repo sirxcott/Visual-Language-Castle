@@ -25,7 +25,7 @@ extension CardCategoryDetails on CardCategory {
       case CardCategory.green:
         return 'Linkage';
       case CardCategory.red:
-        return 'Compliance Set';
+        return 'Compliance';
       case CardCategory.notice:
         return 'Notice';
       case CardCategory.embedded:

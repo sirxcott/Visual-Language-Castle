@@ -1117,7 +1117,7 @@ void main() {
 
     // Confirm longer functional phrases remain in specialized tables and not in Verbs
     final noticeTable = tablesByName['Notice']!;
-    final complianceTable = tablesByName['Compliance Set']!;
+    final complianceTable = tablesByName['Compliance Commands']!;
     final deepenersTable = tablesByName['Deepeners']!;
 
     expect(noticeTable.cards.map((c) => c.text), contains('notice how'));
@@ -1188,16 +1188,82 @@ void main() {
   });
 
   test('every production table has defined metadata and resolved category color', () {
-    expect(languageTables, hasLength(11));
+    expect(languageTables, hasLength(12));
     for (final table in languageTables) {
       expect(table.name, isNotEmpty);
-      expect(table.cards, isNotEmpty);
-      for (final card in table.cards) {
-        expect(card.text.trim(), isNotEmpty);
-        expect(card.category.label, isNotEmpty);
-        expect(card.category.color.a, greaterThan(0));
+      if (table.name == 'Compliance Sets') {
+        expect(table.cards, isEmpty);
+      } else {
+        expect(table.cards, isNotEmpty);
+        for (final card in table.cards) {
+          expect(card.text.trim(), isNotEmpty);
+          expect(card.category.label, isNotEmpty);
+          expect(card.category.color.a, greaterThan(0));
+        }
       }
     }
+  });
+
+  test('Compliance hierarchy and Compliance Commands table are formalized', () {
+    expect(CardCategory.red.label, 'Compliance');
+    expect(CardCategory.red.color, const Color(0xFFB94D4B));
+
+    final tablesByName = {for (final table in languageTables) table.name: table};
+    expect(tablesByName, contains('Compliance Commands'));
+    expect(tablesByName, contains('Compliance Sets'));
+
+    final commandsTable = tablesByName['Compliance Commands']!;
+    final setsTable = tablesByName['Compliance Sets']!;
+
+    expect(commandsTable.cards, hasLength(12));
+    expect(setsTable.cards, isEmpty);
+
+    final expectedIds = [for (var i = 1; i <= 12; i++) 'comp-$i'];
+    expect(commandsTable.cards.map((c) => c.id), expectedIds);
+    expect(commandsTable.cards.every((c) => c.category == CardCategory.red), isTrue);
+
+    expect(commandsTable.cards.map((c) => c.text), containsAll([
+      'Relax your eyes',
+      'Make yourself comfortable',
+      'Let your breathing settle',
+      'In a moment, I\'m going to ask you to relax',
+      'Take a comfortable breath',
+      'Allow your shoulders to relax',
+      'Notice the support beneath you',
+      'Let your hands rest comfortably',
+      'Take a moment to settle in',
+      'Find a comfortable position',
+      'Allow yourself to listen',
+      'Just let your eyes rest',
+    ]));
+  });
+
+  testWidgets('Research Laboratory filters distinguish Compliance Commands and Compliance Sets', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
+
+    await tester.tap(find.byKey(const ValueKey('research-category-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Compliance').last);
+    await tester.pumpAndSettle();
+    expect(find.text('12 results'), findsOneWidget);
+    expect(find.text('Relax your eyes'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('research-category-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('All Categories').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('research-table-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Compliance Commands').last);
+    await tester.pumpAndSettle();
+    expect(find.text('12 results'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('research-table-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Compliance Sets').last);
+    await tester.pumpAndSettle();
+    expect(find.text('0 results'), findsOneWidget);
   });
 
   testWidgets('all production tables render cards on the narrow mobile wall layout', (WidgetTester tester) async {

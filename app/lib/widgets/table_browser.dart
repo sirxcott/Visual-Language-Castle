@@ -113,6 +113,12 @@ static const _tableGuidance = <String, List<Widget>>{
   'TRANCE WORDPLAY': [
     Text('Trance Wordplay uses phonetic puns, homophones, and prefix substitutions (such as "Trance-" for "trans-") to create double meanings and unconscious associations.', style: TextStyle(color: Color(0xFFE0D3B8), fontSize: 14, height: 1.4)),
   ],
+  'Compliance Commands': [
+    Text('These are individual low-effort commands used to obtain or maintain easy compliance and hypnotic momentum. They may later be classified as Voluntary or Involuntary Compliance. A single command is NOT a Compliance Set.', style: TextStyle(color: Color(0xFFE0D3B8), fontSize: 14, height: 1.4)),
+  ],
+  'Compliance Sets': [
+    Text('A Compliance Set is three or more Compliance Commands given one after another. Fewer than three commands does not constitute a set. The sequence should flow naturally as a unit. This table is intentionally empty until approved sets are added.', style: TextStyle(color: Color(0xFFE0D3B8), fontSize: 14, height: 1.4)),
+  ],
   'Linkages': [
     Text('Linkages are spoken transition structures that maintain and shape hypnotic/conversational momentum.', style: TextStyle(color: Color(0xFFE0D3B8), fontSize: 14, height: 1.4)),
     SizedBox(height: 16),
