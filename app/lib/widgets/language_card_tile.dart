@@ -66,15 +66,55 @@ class _CardSurface extends StatelessWidget {
       constraints: BoxConstraints(minHeight: mobile ? 56 : 68),
       padding: EdgeInsets.symmetric(horizontal: mobile ? 10 : 14, vertical: mobile ? 8 : 12),
       decoration: BoxDecoration(
-        color: Color.alphaBlend(color.withValues(alpha: 0.2), const Color(0xFF191B1C)),
-        border: Border(left: BorderSide(color: color, width: 4), top: BorderSide(color: color.withValues(alpha: 0.42))),
-        boxShadow: isDragging ? const [BoxShadow(color: Colors.black87, blurRadius: 18)] : null,
+        color: Color.alphaBlend(color.withValues(alpha: 0.18), const Color(0xFF191C1D)),
+        border: Border(
+          left: BorderSide(color: color, width: 4),
+          top: BorderSide(color: color.withValues(alpha: 0.38), width: 1),
+          right: BorderSide(color: const Color(0xFF2E3132), width: 1),
+          bottom: BorderSide(color: const Color(0xFF2E3132), width: 1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black87,
+            blurRadius: isDragging ? 20 : 8,
+            spreadRadius: isDragging ? 2 : 0,
+            offset: Offset(0, isDragging ? 8 : 3),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Expanded(child: Text(card.text, style: const TextStyle(color: Color(0xFFE9E0CC), fontSize: 14, height: 1.25))),
+          Container(
+            width: 6,
+            height: 6,
+            margin: const EdgeInsets.only(right: 10),
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(color: color.withValues(alpha: 0.6), blurRadius: 4),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Text(
+              card.text,
+              style: const TextStyle(
+                color: Color(0xFFF0E6D2),
+                fontSize: 14,
+                height: 1.25,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ),
           if (onAddToWall != null && MediaQuery.sizeOf(context).width < 700)
-            IconButton(tooltip: 'Add to Wall', onPressed: onAddToWall, icon: const Icon(Icons.add_circle_outline, color: Color(0xFFC09A52), size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints.tightFor(width: 28, height: 28)),
+            IconButton(
+              tooltip: 'Add to Wall',
+              onPressed: onAddToWall,
+              icon: const Icon(Icons.add_circle_outline, color: Color(0xFFD4AF37), size: 20),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints.tightFor(width: 28, height: 28),
+            ),
         ],
       ),
     );

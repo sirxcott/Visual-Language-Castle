@@ -491,22 +491,33 @@ class _RoomHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final compact = MediaQuery.sizeOf(context).width < 900;
+    const gold = Color(0xFFD4AF37);
+    const brass = Color(0xFFC09A52);
+
     return Container(
       height: 66,
       padding: const EdgeInsets.symmetric(horizontal: 18),
-      decoration: const BoxDecoration(color: Color(0xFF151819), border: Border(bottom: BorderSide(color: Color(0xFF4A402F))),),
+      decoration: const BoxDecoration(
+        color: Color(0xFF151819),
+        border: Border(bottom: BorderSide(color: Color(0xFF4E422F))),
+        boxShadow: [BoxShadow(color: Colors.black54, blurRadius: 8, offset: Offset(0, 2))],
+      ),
       child: Row(
         children: [
-          IconButton(tooltip: 'Return to Gallery Hall', onPressed: onBack, icon: const Icon(Icons.arrow_back_rounded)),
+          IconButton(
+            tooltip: 'Return to Gallery Hall',
+            onPressed: onBack,
+            icon: const Icon(Icons.arrow_back_rounded, color: gold),
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('PRACTICE ROOM', style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 2.5)),
-                const SizedBox(height: 3),
-                Text('The Working Wall', overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFF0E6D2), fontSize: 20)),
+                const Text('PRACTICE ROOM', style: TextStyle(color: gold, fontSize: 10, letterSpacing: 2.5, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 2),
+                const Text('The Working Wall', overflow: TextOverflow.ellipsis, style: TextStyle(color: Color(0xFFF5EEDA), fontSize: 20, fontWeight: FontWeight.w500)),
               ],
             ),
           ),
@@ -515,21 +526,54 @@ class _RoomHeader extends StatelessWidget {
             IconButton(
               tooltip: connectionMode ? 'Exit Connections' : 'Connections',
               onPressed: onToggleConnections,
-              icon: Icon(connectionMode ? Icons.link_off : Icons.account_tree_outlined),
+              icon: Icon(connectionMode ? Icons.link_off : Icons.account_tree_outlined, color: connectionMode ? gold : brass),
             )
           else
-            FilledButton.icon(onPressed: onToggleConnections, icon: Icon(connectionMode ? Icons.link_off : Icons.account_tree_outlined, size: 17), label: Text(connectionMode ? 'Exit Connections' : 'Connections')),
+            FilledButton.icon(
+              onPressed: onToggleConnections,
+              icon: Icon(connectionMode ? Icons.link_off : Icons.account_tree_outlined, size: 17),
+              label: Text(connectionMode ? 'Exit Connections' : 'Connections'),
+              style: FilledButton.styleFrom(
+                backgroundColor: connectionMode ? gold : const Color(0xFF1E1B15),
+                foregroundColor: connectionMode ? const Color(0xFF141009) : const Color(0xFFE0D3B8),
+                side: BorderSide(color: connectionMode ? gold : brass, width: 1.2),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0.5),
+              ),
+            ),
           const SizedBox(width: 10),
           if (compact)
-            IconButton(tooltip: 'Save to Archive', onPressed: onSave, icon: const Icon(Icons.archive_outlined))
+            IconButton(tooltip: 'Save to Archive', onPressed: onSave, icon: const Icon(Icons.archive_outlined, color: brass))
           else
-            FilledButton.icon(onPressed: onSave, icon: const Icon(Icons.archive_outlined, size: 17), label: const Text('Save to Archive')),
+            FilledButton.icon(
+              onPressed: onSave,
+              icon: const Icon(Icons.archive_outlined, size: 17),
+              label: const Text('Save to Archive'),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF1E1B15),
+                foregroundColor: const Color(0xFFE0D3B8),
+                side: const BorderSide(color: brass, width: 1.2),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0.5),
+              ),
+            ),
           if (onUpdate != null) ...[
             const SizedBox(width: 10),
             if (compact)
-              IconButton(tooltip: 'Update Archive', onPressed: onUpdate, icon: const Icon(Icons.save_outlined))
+              IconButton(tooltip: 'Update Archive', onPressed: onUpdate, icon: const Icon(Icons.save_outlined, color: brass))
             else
-              FilledButton.icon(onPressed: onUpdate, icon: const Icon(Icons.save_outlined, size: 17), label: const Text('Update Archive')),
+              FilledButton.icon(
+                onPressed: onUpdate,
+                icon: const Icon(Icons.save_outlined, size: 17),
+                label: const Text('Update Archive'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E1B15),
+                  foregroundColor: const Color(0xFFE0D3B8),
+                  side: const BorderSide(color: brass, width: 1.2),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0.5),
+                ),
+              ),
           ],
           const SizedBox(width: 10),
         ],
@@ -546,34 +590,52 @@ class _ConnectionsPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFFC09A52).withValues(alpha: 0.72)
-      ..strokeWidth = 2
+    final glowPaint = Paint()
+      ..color = const Color(0xFFD4AF37).withValues(alpha: 0.28)
+      ..strokeWidth = 4.5
       ..style = PaintingStyle.stroke;
-    final arrowPaint = Paint()..color = const Color(0xFFE0B96B)..style = PaintingStyle.fill;
+
+    final linePaint = Paint()
+      ..color = const Color(0xFFF0D283)
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
+
+    final arrowFill = Paint()..color = const Color(0xFFF5D68B)..style = PaintingStyle.fill;
+    final arrowStroke = Paint()
+      ..color = const Color(0xFF121415)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+
     for (final connection in connections) {
       final fromMatches = cards.where((card) => card.instanceId == connection.fromCardId);
       final toMatches = cards.where((card) => card.instanceId == connection.toCardId);
       if (fromMatches.isEmpty || toMatches.isEmpty) continue;
+
       final start = fromMatches.first.position + const Offset(95, 40);
       final end = toMatches.first.position + const Offset(95, 40);
-      canvas.drawLine(start, end, paint);
+
+      // Draw outer glow and inner solid connection line
+      canvas.drawLine(start, end, glowPaint);
+      canvas.drawLine(start, end, linePaint);
+
       final direction = end - start;
       final length = direction.distance;
       if (length == 0) continue;
+
       final unit = direction / length;
       final midpoint = Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2);
-      final tip = midpoint + unit * 7;
-      final base = midpoint - unit * 7;
-      final normal = Offset(-unit.dy, unit.dx) * 5;
-      canvas.drawPath(
-        Path()
-          ..moveTo(tip.dx, tip.dy)
-          ..lineTo((base + normal).dx, (base + normal).dy)
-          ..lineTo((base - normal).dx, (base - normal).dy)
-          ..close(),
-        arrowPaint,
-      );
+      final tip = midpoint + unit * 8;
+      final base = midpoint - unit * 6;
+      final normal = Offset(-unit.dy, unit.dx) * 5.5;
+
+      final arrowPath = Path()
+        ..moveTo(tip.dx, tip.dy)
+        ..lineTo((base + normal).dx, (base + normal).dy)
+        ..lineTo((base - normal).dx, (base - normal).dy)
+        ..close();
+
+      canvas.drawPath(arrowPath, arrowFill);
+      canvas.drawPath(arrowPath, arrowStroke);
     }
   }
 
@@ -588,22 +650,71 @@ class _WorkspaceBackdrop extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF262A2A), Color(0xFF151818), Color(0xFF0C0E0F)]),
+        gradient: RadialGradient(
+          center: Alignment(0, -0.2),
+          radius: 1.1,
+          colors: [
+            Color(0xFF222425),
+            Color(0xFF141617),
+            Color(0xFF090A0B),
+            Color(0xFF040405),
+          ],
+        ),
       ),
-      child: CustomPaint(painter: _WallGridPainter()),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          CustomPaint(painter: _WallGridPainter()),
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _TorchLightPainter(),
+            ),
+          ),
+        ],
+      ),
     );
   }
+}
+
+class _TorchLightPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final torchGlow = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(0, -0.5),
+        radius: 0.8,
+        colors: [
+          const Color(0xFFD4A325).withValues(alpha: 0.08),
+          Colors.transparent,
+        ],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, torchGlow);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _WallGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = const Color(0x12000000)..strokeWidth = 1;
-    for (var x = 0.0; x < size.width; x += 48) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    final strokePaint = Paint()
+      ..color = const Color(0x14302C26)
+      ..strokeWidth = 1.0;
+
+    final highlightPaint = Paint()
+      ..color = const Color(0x0CFFFFFF)
+      ..strokeWidth = 0.8;
+
+    const gridSize = 48.0;
+
+    for (var x = 0.0; x < size.width; x += gridSize) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), strokePaint);
+      canvas.drawLine(Offset(x + 1, 0), Offset(x + 1, size.height), highlightPaint);
     }
-    for (var y = 0.0; y < size.height; y += 48) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    for (var y = 0.0; y < size.height; y += gridSize) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), strokePaint);
+      canvas.drawLine(Offset(0, y + 1), Offset(size.width, y + 1), highlightPaint);
     }
   }
 
@@ -616,17 +727,36 @@ class _EmptyWorkspaceHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: IgnorePointer(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.dashboard_customize_outlined, size: 44, color: Color(0xFF655F53)),
-            SizedBox(height: 14),
-            Text('Your working wall', style: TextStyle(color: Color(0xFFC7BDAA), fontSize: 19)),
-            SizedBox(height: 6),
-            Text('Drag language cards here to begin building.', style: TextStyle(color: Color(0xFF80796C), fontSize: 13)),
-          ],
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 22),
+          decoration: BoxDecoration(
+            color: const Color(0xFF141617).withValues(alpha: 0.85),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFF6E5935).withValues(alpha: 0.6), width: 1.5),
+            boxShadow: const [BoxShadow(color: Colors.black87, blurRadius: 20)],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF1E1B15),
+                  border: Border.all(color: const Color(0xFFC09A52), width: 1.2),
+                  boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 6)],
+                ),
+                child: const Icon(Icons.dashboard_customize_outlined, size: 28, color: Color(0xFFD4AF37)),
+              ),
+              const SizedBox(height: 14),
+              const Text('Your working wall', style: TextStyle(color: Color(0xFFF5EEDA), fontSize: 19, fontWeight: FontWeight.w500, letterSpacing: 0.5)),
+              const SizedBox(height: 6),
+              const Text('Drag language cards here to begin building.', style: TextStyle(color: Color(0xFFA9A294), fontSize: 13)),
+            ],
+          ),
         ),
       ),
     );
@@ -641,7 +771,13 @@ class _DropHighlight extends StatelessWidget {
     return IgnorePointer(
       child: Container(
         margin: const EdgeInsets.all(12),
-        decoration: BoxDecoration(border: Border.all(color: const Color(0xFFC09A52).withValues(alpha: 0.6), width: 2)),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.75), width: 2),
+          boxShadow: [
+            BoxShadow(color: const Color(0xFFD4AF37).withValues(alpha: 0.15), blurRadius: 16, spreadRadius: 4),
+          ],
+        ),
       ),
     );
   }

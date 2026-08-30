@@ -29,8 +29,8 @@ class TableBrowser extends StatelessWidget {
     return Container(
       width: 270,
       decoration: const BoxDecoration(
-        color: Color(0xFF121516),
-        border: Border(right: BorderSide(color: Color(0xFF4A402F))),
+        color: Color(0xFF111314),
+        border: Border(right: BorderSide(color: Color(0xFF4E422F))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -40,10 +40,10 @@ class TableBrowser extends StatelessWidget {
             child: Row(
               children: [
                 const Expanded(
-                  child: Text('TABLE BROWSER', overflow: TextOverflow.ellipsis, style: TextStyle(color: Color(0xFFC09A52), fontSize: 10, letterSpacing: 1.8)),
+                  child: Text('TABLE BROWSER', overflow: TextOverflow.ellipsis, style: TextStyle(color: Color(0xFFD4AF37), fontSize: 10, letterSpacing: 1.8, fontWeight: FontWeight.w700)),
                 ),
                 const SizedBox(width: 8),
-                Text('${tableIndex + 1} / $tableCount', style: const TextStyle(color: Color(0xFF827967), fontSize: 11)),
+                Text('${tableIndex + 1} / $tableCount', style: const TextStyle(color: Color(0xFF827967), fontSize: 11, fontWeight: FontWeight.w500)),
               ],
             ),
           ),
@@ -51,11 +51,11 @@ class TableBrowser extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children: [
-                IconButton(tooltip: 'Previous table (A)', onPressed: onPrevious, icon: const Icon(Icons.chevron_left_rounded)),
+                IconButton(tooltip: 'Previous table (A)', onPressed: onPrevious, icon: const Icon(Icons.chevron_left_rounded, color: Color(0xFFD4AF37))),
                 Expanded(
-                  child: Text(table.name, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFF0E6D2), fontSize: 17, fontWeight: FontWeight.w600)),
+                  child: Text(table.name, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFF5EEDA), fontSize: 17, fontWeight: FontWeight.w600)),
                 ),
-                IconButton(tooltip: 'Next table (D)', onPressed: onNext, icon: const Icon(Icons.chevron_right_rounded)),
+                IconButton(tooltip: 'Next table (D)', onPressed: onNext, icon: const Icon(Icons.chevron_right_rounded, color: Color(0xFFD4AF37))),
               ],
             ),
           ),
