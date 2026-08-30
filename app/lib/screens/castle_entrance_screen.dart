@@ -57,6 +57,7 @@ class _CastleEntranceScreenState extends State<CastleEntranceScreen> with Single
           final actualDoorWidth = mobile ? mobileDoorWidth : doorWidth;
           final actualDoorHeight = mobile ? actualDoorWidth * 2.1 : doorHeight;
           final stageWidth = math.min(650.0, constraints.maxWidth * 0.9);
+
           return Stack(
             fit: StackFit.expand,
             children: [
@@ -64,33 +65,96 @@ class _CastleEntranceScreenState extends State<CastleEntranceScreen> with Single
               SafeArea(
                 child: Center(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+                    padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text('VISUAL LANGUAGE CASTLE', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFFD0B477), fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 4)),
-                        const SizedBox(height: 12),
-                        const Text('Visual Language Castle', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFFF1E7D0), fontSize: 34, fontWeight: FontWeight.w400, letterSpacing: 0.5)),
-                        const SizedBox(height: 8),
-                        const Text('Enter the architecture of language.', style: TextStyle(color: Color(0xFFB8AE9B), fontSize: 16, fontStyle: FontStyle.italic)),
+                        // Subtitle Header
+                        const Text(
+                          'VISUAL LANGUAGE CASTLE',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Color(0xFFD4AF37),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 4.5,
+                            shadows: [Shadow(color: Colors.black87, blurRadius: 8)],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        // Main Title
+                        Text(
+                          'Visual Language Castle',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: const Color(0xFFF5EEDA),
+                            fontSize: mobile ? 28 : 38,
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: 1.2,
+                            shadows: const [
+                              Shadow(color: Colors.black87, blurRadius: 14, offset: Offset(0, 4)),
+                              Shadow(color: Color(0x66D4AF37), blurRadius: 20),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        // Decorative Rule
+                        const _DecorativeRule(),
+                        const SizedBox(height: 10),
+                        // Tagline
+                        const Text(
+                          'Enter the architecture of language.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Color(0xFFC2B7A0),
+                            fontSize: 16,
+                            fontStyle: FontStyle.italic,
+                            shadows: [Shadow(color: Colors.black87, blurRadius: 6)],
+                          ),
+                        ),
                         const SizedBox(height: 28),
+                        // Door Portal Stage
                         SizedBox(
                           width: stageWidth,
-                          height: actualDoorHeight,
+                          height: actualDoorHeight + 16,
                           child: AnimatedBuilder(
                             animation: _doorController,
                             builder: (context, child) => Stack(
                               alignment: Alignment.center,
                               children: [
+                                // Stone Surround Portal Frame
                                 Container(
-                                    width: actualDoorWidth * 2 + 10,
-                                    height: actualDoorHeight + 10,
+                                  width: actualDoorWidth * 2 + 24,
+                                  height: actualDoorHeight + 24,
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF070707),
-                                    border: Border.all(color: const Color(0xFF6E5935), width: 3),
-                                    boxShadow: const [BoxShadow(color: Colors.black, blurRadius: 35, spreadRadius: 7)],
+                                    color: const Color(0xFF050505),
+                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                                    border: Border.all(color: const Color(0xFF6E5935), width: 3.5),
+                                    boxShadow: const [
+                                      BoxShadow(color: Colors.black, blurRadius: 40, spreadRadius: 8),
+                                      BoxShadow(color: Color(0x33D4AF37), blurRadius: 16, spreadRadius: -2),
+                                    ],
+                                  ),
+                                  child: Stack(
+                                    children: [
+                                      // Soft Inner Glow (Chamber Beyond Doors)
+                                      Positioned.fill(
+                                        child: DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            gradient: RadialGradient(
+                                              colors: [
+                                                const Color(0xFFD4A325).withValues(alpha: 0.18 * _doorController.value),
+                                                Colors.transparent,
+                                              ],
+                                              radius: 0.8,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
+                                // Castle Doors
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -103,17 +167,10 @@ class _CastleEntranceScreenState extends State<CastleEntranceScreen> with Single
                           ),
                         ),
                         const SizedBox(height: 28),
-                        FilledButton.icon(
-                          onPressed: _isOpening ? null : _enterCastle,
-                          icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                          label: const Text('Enter'),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFFB69558),
-                            foregroundColor: const Color(0xFF17120C),
-                            disabledBackgroundColor: const Color(0xFF665538),
-                            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                            textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                          ),
+                        // Enter Button Plaque
+                        _EnterCastleButton(
+                          isOpening: _isOpening,
+                          onPressed: _enterCastle,
                         ),
                       ],
                     ),
@@ -128,26 +185,174 @@ class _CastleEntranceScreenState extends State<CastleEntranceScreen> with Single
   }
 }
 
+class _DecorativeRule extends StatelessWidget {
+  const _DecorativeRule();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 180,
+      height: 12,
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              height: 1,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.transparent, Color(0xFFC09A52)],
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Container(
+              width: 6,
+              height: 6,
+              decoration: const BoxDecoration(
+                color: Color(0xFFD4AF37),
+                shape: BoxShape.circle,
+                boxShadow: [BoxShadow(color: Color(0x99D4AF37), blurRadius: 4)],
+              ),
+            ),
+          ),
+          Expanded(
+            child: Container(
+              height: 1,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFC09A52), Colors.transparent],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EnterCastleButton extends StatefulWidget {
+  const _EnterCastleButton({required this.isOpening, required this.onPressed});
+
+  final bool isOpening;
+  final VoidCallback onPressed;
+
+  @override
+  State<_EnterCastleButton> createState() => _EnterCastleButtonState();
+}
+
+class _EnterCastleButtonState extends State<_EnterCastleButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    const brass = Color(0xFFC09A52);
+    const gold = Color(0xFFD4AF37);
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(6),
+          boxShadow: [
+            BoxShadow(
+              color: _hovered ? gold.withValues(alpha: 0.45) : Colors.black87,
+              blurRadius: _hovered ? 18 : 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: FilledButton.icon(
+          onPressed: widget.isOpening ? null : widget.onPressed,
+          icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+          label: const Text('Enter'),
+          style: FilledButton.styleFrom(
+            backgroundColor: _hovered ? const Color(0xFF2C2419) : const Color(0xFF1E1B15),
+            foregroundColor: gold,
+            disabledBackgroundColor: const Color(0xFF14120E),
+            disabledForegroundColor: const Color(0xFF665538),
+            padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 16),
+            side: BorderSide(color: _hovered ? gold : brass, width: 1.8),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 1.2),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _CastleWallPainter extends CustomPainter {
   const _CastleWallPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Atmospheric radial gradient background
     final background = Paint()
-      ..shader = const RadialGradient(center: Alignment(0, 0.1), radius: 1.0, colors: [Color(0xFF323333), Color(0xFF17191A), Color(0xFF080909)]).createShader(Offset.zero & size);
+      ..shader = RadialGradient(
+        center: const Alignment(0, -0.2),
+        radius: 1.1,
+        colors: const [
+          Color(0xFF232527),
+          Color(0xFF141617),
+          Color(0xFF090A0B),
+          Color(0xFF040405),
+        ],
+      ).createShader(Offset.zero & size);
     canvas.drawRect(Offset.zero & size, background);
 
-    final stone = Paint()..color = const Color(0x221F2020)..style = PaintingStyle.stroke..strokeWidth = 1;
-    for (var row = 0; row < size.height / 58; row++) {
-      final y = row * 58.0;
-      final offset = row.isEven ? 0.0 : 44.0;
-      for (var column = -1; column < size.width / 88; column++) {
-        final x = column * 88.0 + offset;
-        canvas.drawRect(Rect.fromLTWH(x, y, 86, 56), stone);
+    // Warm ambient torch-glow from upper center
+    final torchGlow = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(0, -0.5),
+        radius: 0.7,
+        colors: [
+          const Color(0xFFD4A325).withValues(alpha: 0.12),
+          Colors.transparent,
+        ],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, torchGlow);
+
+    // Ashlar stone masonry block coursing
+    final stoneStroke = Paint()
+      ..color = const Color(0x1F2A2722)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    final stoneHighlight = Paint()
+      ..color = const Color(0x12F5EEDA)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8;
+
+    const blockHeight = 62.0;
+    const blockWidth = 96.0;
+
+    for (var row = 0; row < size.height / blockHeight + 1; row++) {
+      final y = row * blockHeight;
+      final offset = row.isEven ? 0.0 : blockWidth / 2;
+      for (var col = -1; col < size.width / blockWidth + 1; col++) {
+        final x = col * blockWidth + offset;
+        final rect = Rect.fromLTWH(x, y, blockWidth - 2, blockHeight - 2);
+
+        // Draw stone outline
+        canvas.drawRect(rect, stoneStroke);
+
+        // Top-left subtle stone edge highlight
+        canvas.drawLine(rect.topLeft, rect.topRight, stoneHighlight);
+        canvas.drawLine(rect.topLeft, rect.bottomLeft, stoneHighlight);
       }
     }
 
-    final vignette = Paint()..shader = RadialGradient(colors: [Colors.transparent, Colors.black.withValues(alpha: 0.72)], stops: const [0.48, 1.0]).createShader(Offset.zero & size);
+    // Outer vignette
+    final vignette = Paint()
+      ..shader = RadialGradient(
+        colors: [Colors.transparent, Colors.black.withValues(alpha: 0.82)],
+        stops: const [0.45, 1.0],
+      ).createShader(Offset.zero & size);
     canvas.drawRect(Offset.zero & size, vignette);
   }
 
