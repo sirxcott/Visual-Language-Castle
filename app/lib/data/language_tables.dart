@@ -166,7 +166,6 @@ const languageTables = <LanguageTable>[
       LanguageCard(id: 'trance-5', text: 'Trance-portation', category: CardCategory.tranceWordplay, tableName: 'TRANCE WORDPLAY'),
       LanguageCard(id: 'trance-6', text: 'Trance-plant', category: CardCategory.tranceWordplay, tableName: 'TRANCE WORDPLAY'),
       LanguageCard(id: 'trance-7', text: 'Trance-ference', category: CardCategory.tranceWordplay, tableName: 'TRANCE WORDPLAY'),
-      LanguageCard(id: 'trance-8', text: 'trance-formation', category: CardCategory.tranceWordplay, tableName: 'TRANCE WORDPLAY'),
       LanguageCard(id: 'trance-9', text: 'Trance-spire', category: CardCategory.tranceWordplay, tableName: 'TRANCE WORDPLAY'),
       LanguageCard(id: 'trance-10', text: 'Trance-formation', category: CardCategory.tranceWordplay, tableName: 'TRANCE WORDPLAY'),
       LanguageCard(id: 'trance-11', text: 'Trance-mogrification', category: CardCategory.tranceWordplay, tableName: 'TRANCE WORDPLAY'),

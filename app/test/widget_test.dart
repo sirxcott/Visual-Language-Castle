@@ -559,7 +559,7 @@ void main() {
 
   testWidgets('Research results show Linkage subtype status and filtered count', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
-    expect(find.text('126 results'), findsOneWidget);
+    expect(find.text('125 results'), findsOneWidget);
     expect(find.text('Restatement Linkages'), findsNWidgets(6));
     expect(find.text('Momentum Linkages'), findsNWidgets(4));
     expect(find.text('Unclassified'), findsNWidgets(5));
@@ -589,7 +589,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Reset research filters'));
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.text('126 results'), findsOneWidget);
+    expect(find.text('125 results'), findsOneWidget);
     expect(find.text('or should I say'), findsOneWidget);
     expect(find.text('Unclassified'), findsNWidgets(5));
     expect(tester.widget<TextField>(find.byKey(const ValueKey('research-search-field'))).controller!.text, isEmpty);
@@ -615,7 +615,7 @@ void main() {
     await tester.tap(find.text('All Tables').last);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('research-linkage-subtype-filter')), findsOneWidget);
-    expect(find.text('126 results'), findsOneWidget);
+    expect(find.text('125 results'), findsOneWidget);
   });
 
   testWidgets('Research details show the confirmed Linkage subtype', (WidgetTester tester) async {
@@ -1126,6 +1126,47 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('1 results'), findsOneWidget);
     expect(find.text('imagine').last, findsOneWidget);
+  });
+
+  test('TRANCE WORDPLAY contains exactly 15 unique cards with duplicate trance-8 removed', () {
+    final tablesByName = {for (final table in languageTables) table.name: table};
+    expect(tablesByName, contains('TRANCE WORDPLAY'));
+
+    final tranceTable = tablesByName['TRANCE WORDPLAY']!;
+    expect(tranceTable.cards, hasLength(15));
+
+    final cardIds = tranceTable.cards.map((c) => c.id).toList();
+    expect(cardIds, isNot(contains('trance-8')));
+    expect(cardIds, containsAll([
+      'trance-1', 'trance-2', 'trance-3', 'trance-4', 'trance-5', 'trance-6', 'trance-7',
+      'trance-9', 'trance-10', 'trance-11', 'trance-12', 'trance-13', 'trance-14', 'trance-15', 'trance-16'
+    ]));
+
+    final cardTexts = tranceTable.cards.map((c) => c.text).toList();
+    expect(cardTexts, contains('Trance-formation'));
+    expect(cardTexts, contains('Trance-form'));
+    expect(cardTexts, contains('form-uh-trance'));
+    expect(cardTexts, isNot(contains('trance-formation')));
+
+    expect(tranceTable.cards.every((c) => c.category == CardCategory.tranceWordplay), isTrue);
+    expect(CardCategory.tranceWordplay.color, const Color(0xFF8D527F));
+    expect(CardCategory.tranceWordplay.label, 'Trance Wordplay');
+  });
+
+  testWidgets('Research Laboratory filters and searches TRANCE WORDPLAY', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
+
+    await tester.tap(find.byKey(const ValueKey('research-table-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('TRANCE WORDPLAY').last);
+    await tester.pumpAndSettle();
+    expect(find.text('15 results'), findsOneWidget);
+    expect(find.text('Trance-formation'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const ValueKey('research-search-field')), 'form-uh-trance');
+    await tester.pumpAndSettle();
+    expect(find.text('1 results'), findsOneWidget);
+    expect(find.text('form-uh-trance').last, findsOneWidget);
   });
 
   test('every production table has defined metadata and resolved category color', () {
