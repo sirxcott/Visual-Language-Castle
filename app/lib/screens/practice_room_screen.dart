@@ -5,6 +5,7 @@ import '../data/language_tables.dart';
 import '../models/archived_work.dart';
 import '../models/language_card.dart';
 import '../services/archive_storage.dart';
+import '../services/sound_effects.dart';
 import '../widgets/table_browser.dart';
 import '../widgets/workspace_card.dart';
 
@@ -200,6 +201,7 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
       (localPosition.dy - 40 + cascade.dy).clamp(12.0, double.infinity),
     );
     setState(() => _workspaceCards.add(WorkspaceCard(card: card, position: position)));
+    SoundEffects.instance.playPlacement();
   }
 
   void _addCardToWall(LanguageCard card) => _placeCard(card, const Offset(112, 52), mobile: true);
@@ -245,6 +247,7 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
       }
       _lastArrangeSnapshot = previousPositions;
     });
+    SoundEffects.instance.playPlacement();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: const Text('Arranged sticky notes'), action: SnackBarAction(label: 'Undo', onPressed: _undoArrange)),
     );
@@ -441,6 +444,7 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
                                     onSelectForConnection: () => _selectCardForConnection(workspaceCard),
                                     onBringToFront: () => _bringCardToFront(workspaceCard),
                                     onCycleOverlap: () => _cycleOverlap(workspaceCard),
+                                    onSettled: SoundEffects.instance.playPlacement,
                                   ),
                                 ),
                               ],

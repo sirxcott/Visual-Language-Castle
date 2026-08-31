@@ -80,6 +80,7 @@ class WorkspaceCardTile extends StatefulWidget {
     this.onSelectForConnection,
     this.onBringToFront,
     this.onCycleOverlap,
+    this.onSettled,
   });
 
   final WorkspaceCard workspaceCard;
@@ -92,6 +93,7 @@ class WorkspaceCardTile extends StatefulWidget {
   final VoidCallback? onSelectForConnection;
   final VoidCallback? onBringToFront;
   final VoidCallback? onCycleOverlap;
+  final VoidCallback? onSettled;
 
   @override
   State<WorkspaceCardTile> createState() => _WorkspaceCardTileState();
@@ -119,11 +121,15 @@ class _WorkspaceCardTileState extends State<WorkspaceCardTile> {
         onEnter: (_) => setState(() => _hovered = true),
         onExit: (_) => setState(() => _hovered = false),
         child: RepaintBoundary(
-          child: AnimatedScale(
-            scale: _dragging ? 1.045 : 1.0,
-            duration: const Duration(milliseconds: 140),
+          child: AnimatedSlide(
+            offset: Offset(0, _dragging ? -0.05 : 0),
+            duration: const Duration(milliseconds: 130),
             curve: Curves.easeOut,
-            child: Transform.rotate(
+            child: AnimatedScale(
+              scale: _dragging ? 1.045 : 1.0,
+              duration: const Duration(milliseconds: 140),
+              curve: Curves.easeOut,
+              child: Transform.rotate(
               angle: rotation,
               child: ConstrainedBox(
                 constraints: BoxConstraints(minWidth: 150, maxWidth: widget.mobile ? 170 : 240),
@@ -191,7 +197,12 @@ class _WorkspaceCardTileState extends State<WorkspaceCardTile> {
                             onPanUpdate: widget.connectionMode
                                 ? null
                                 : (details) => widget.onPositionChanged(widget.workspaceCard.position + details.delta),
-                            onPanEnd: widget.connectionMode ? null : (_) => setState(() => _dragging = false),
+                            onPanEnd: widget.connectionMode
+                                ? null
+                                : (_) {
+                                    setState(() => _dragging = false);
+                                    widget.onSettled?.call();
+                                  },
                             onPanCancel: widget.connectionMode ? null : () => setState(() => _dragging = false),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -275,6 +286,7 @@ class _WorkspaceCardTileState extends State<WorkspaceCardTile> {
                 ),
               ),
             ),
+          ),
           ),
         ),
       ),
