@@ -13,6 +13,17 @@ class CastleEntranceScreen extends StatefulWidget {
 }
 
 class _CastleEntranceScreenState extends State<CastleEntranceScreen> with SingleTickerProviderStateMixin {
+  // Layout metrics used to fit the whole entrance into a single viewport.
+  static const double _doorAspect = 2.11; // single door height / width
+  static const double _portalPadding = 24; // stone surround around the door pair
+  static const double _horizontalPadding = 20;
+  static const double _eyebrowHeight = 16;
+  static const double _titleLineFactor = 1.3;
+  static const double _ruleHeight = 12;
+  static const double _taglineHeight = 22;
+  static const double _buttonHeight = 54;
+  static const double _minDoorWidth = 84;
+
   late final AnimationController _doorController;
   bool _isOpening = false;
 
@@ -48,138 +59,176 @@ class _CastleEntranceScreenState extends State<CastleEntranceScreen> with Single
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final doorHeight = math.min(570.0, constraints.maxHeight * 0.57);
-          final doorWidth = math.min(270.0, constraints.maxWidth * 0.22);
-          final mobile = constraints.maxWidth < 600;
-          final mobileDoorWidth = math.min(170.0, (constraints.maxWidth - 40) / 2);
-          final actualDoorWidth = mobile ? mobileDoorWidth : doorWidth;
-          final actualDoorHeight = mobile ? actualDoorWidth * 2.1 : doorHeight;
-          final stageWidth = math.min(650.0, constraints.maxWidth * 0.9);
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const CustomPaint(painter: _CastleWallPainter()),
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final availableWidth = constraints.maxWidth;
+                final availableHeight = constraints.maxHeight;
+                final mobile = availableWidth < 600;
 
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              const CustomPaint(painter: _CastleWallPainter()),
-              SafeArea(
-                child: Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Subtitle Header
-                        const Text(
-                          'VISUAL LANGUAGE CASTLE',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Color(0xFFD4AF37),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 4.5,
-                            shadows: [Shadow(color: Colors.black87, blurRadius: 8)],
-                          ),
+                // Gaps and paddings shrink smoothly on shorter viewports.
+                final gapScale = ((availableHeight - 620) / 240).clamp(0.0, 1.0);
+                final gapSmall = 4 + 6 * gapScale;
+                final gapLarge = 10 + 18 * gapScale;
+                final verticalPadding = 8 + 16 * gapScale;
+
+                final titleSize = mobile ? 28.0 : 38.0;
+                // Height consumed by everything that is not the door portal.
+                final chromeHeight =
+                    _eyebrowHeight +
+                    titleSize * _titleLineFactor +
+                    _ruleHeight +
+                    _taglineHeight +
+                    _buttonHeight +
+                    gapSmall * 3 +
+                    gapLarge * 2 +
+                    verticalPadding * 2;
+
+                final heightForPortal = availableHeight - chromeHeight;
+                final doorWidthFromHeight = (heightForPortal - _portalPadding) / _doorAspect;
+                final doorWidthFromWidth = (availableWidth - _horizontalPadding * 2 - _portalPadding) / 2;
+                final widthCap = mobile ? 170.0 : 270.0;
+
+                final actualDoorWidth = math
+                    .min(widthCap, math.min(doorWidthFromWidth, doorWidthFromHeight))
+                    .clamp(_minDoorWidth, widthCap);
+                final actualDoorHeight = actualDoorWidth * _doorAspect;
+                final stageWidth = math.max(
+                  actualDoorWidth * 2 + _portalPadding,
+                  math.min(650.0, availableWidth * 0.9),
+                );
+
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: availableHeight),
+                    child: Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: verticalPadding,
+                          horizontal: _horizontalPadding,
                         ),
-                        const SizedBox(height: 10),
-                        // Main Title
-                        Text(
-                          'Visual Language Castle',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: const Color(0xFFF5EEDA),
-                            fontSize: mobile ? 28 : 38,
-                            fontWeight: FontWeight.w400,
-                            letterSpacing: 1.2,
-                            shadows: const [
-                              Shadow(color: Colors.black87, blurRadius: 14, offset: Offset(0, 4)),
-                              Shadow(color: Color(0x66D4AF37), blurRadius: 20),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        // Decorative Rule
-                        const _DecorativeRule(),
-                        const SizedBox(height: 10),
-                        // Tagline
-                        const Text(
-                          'Enter the architecture of language.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Color(0xFFC2B7A0),
-                            fontSize: 16,
-                            fontStyle: FontStyle.italic,
-                            shadows: [Shadow(color: Colors.black87, blurRadius: 6)],
-                          ),
-                        ),
-                        const SizedBox(height: 28),
-                        // Door Portal Stage
-                        SizedBox(
-                          width: stageWidth,
-                          height: actualDoorHeight + 16,
-                          child: AnimatedBuilder(
-                            animation: _doorController,
-                            builder: (context, child) => Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                // Stone Surround Portal Frame
-                                Container(
-                                  width: actualDoorWidth * 2 + 24,
-                                  height: actualDoorHeight + 24,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF050505),
-                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-                                    border: Border.all(color: const Color(0xFF6E5935), width: 3.5),
-                                    boxShadow: const [
-                                      BoxShadow(color: Colors.black, blurRadius: 40, spreadRadius: 8),
-                                      BoxShadow(color: Color(0x33D4AF37), blurRadius: 16, spreadRadius: -2),
-                                    ],
-                                  ),
-                                  child: Stack(
-                                    children: [
-                                      // Soft Inner Glow (Chamber Beyond Doors)
-                                      Positioned.fill(
-                                        child: DecoratedBox(
-                                          decoration: BoxDecoration(
-                                            gradient: RadialGradient(
-                                              colors: [
-                                                const Color(0xFFD4A325).withValues(alpha: 0.18 * _doorController.value),
-                                                Colors.transparent,
-                                              ],
-                                              radius: 0.8,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Subtitle Header
+                            const Text(
+                              'VISUAL LANGUAGE CASTLE',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Color(0xFFD4AF37),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 4.5,
+                                shadows: [Shadow(color: Colors.black87, blurRadius: 8)],
+                              ),
+                            ),
+                            SizedBox(height: gapSmall),
+                            // Main Title
+                            Text(
+                              'Visual Language Castle',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: const Color(0xFFF5EEDA),
+                                fontSize: titleSize,
+                                fontWeight: FontWeight.w400,
+                                letterSpacing: 1.2,
+                                shadows: const [
+                                  Shadow(color: Colors.black87, blurRadius: 14, offset: Offset(0, 4)),
+                                  Shadow(color: Color(0x66D4AF37), blurRadius: 20),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: gapSmall),
+                            // Decorative Rule
+                            const _DecorativeRule(),
+                            SizedBox(height: gapSmall),
+                            // Tagline
+                            const Text(
+                              'Enter the architecture of language.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Color(0xFFC2B7A0),
+                                fontSize: 16,
+                                fontStyle: FontStyle.italic,
+                                shadows: [Shadow(color: Colors.black87, blurRadius: 6)],
+                              ),
+                            ),
+                            SizedBox(height: gapLarge),
+                            // Door Portal Stage
+                            SizedBox(
+                              width: stageWidth,
+                              height: actualDoorHeight + _portalPadding,
+                              child: AnimatedBuilder(
+                                animation: _doorController,
+                                builder: (context, child) => Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    // Stone Surround Portal Frame
+                                    Container(
+                                      width: actualDoorWidth * 2 + _portalPadding,
+                                      height: actualDoorHeight + _portalPadding,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF050505),
+                                        borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                                        border: Border.all(color: const Color(0xFF6E5935), width: 3.5),
+                                        boxShadow: const [
+                                          BoxShadow(color: Colors.black, blurRadius: 40, spreadRadius: 8),
+                                          BoxShadow(color: Color(0x33D4AF37), blurRadius: 16, spreadRadius: -2),
+                                        ],
+                                      ),
+                                      child: Stack(
+                                        children: [
+                                          // Soft Inner Glow (Chamber Beyond Doors)
+                                          Positioned.fill(
+                                            child: DecoratedBox(
+                                              decoration: BoxDecoration(
+                                                gradient: RadialGradient(
+                                                  colors: [
+                                                    const Color(
+                                                      0xFFD4A325,
+                                                    ).withValues(alpha: 0.18 * _doorController.value),
+                                                    Colors.transparent,
+                                                  ],
+                                                  radius: 0.8,
+                                                ),
+                                              ),
                                             ),
                                           ),
-                                        ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                ),
-                                // Castle Doors
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    CastleDoor(side: CastleDoorSide.left, progress: _doorController.value, width: actualDoorWidth, height: actualDoorHeight),
-                                    CastleDoor(side: CastleDoorSide.right, progress: _doorController.value, width: actualDoorWidth, height: actualDoorHeight),
+                                    ),
+                                    // Castle Doors
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        CastleDoor(side: CastleDoorSide.left, progress: _doorController.value, width: actualDoorWidth, height: actualDoorHeight),
+                                        CastleDoor(side: CastleDoorSide.right, progress: _doorController.value, width: actualDoorWidth, height: actualDoorHeight),
+                                      ],
+                                    ),
                                   ],
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
+                            SizedBox(height: gapLarge),
+                            // Enter Button Plaque
+                            _EnterCastleButton(
+                              isOpening: _isOpening,
+                              onPressed: _enterCastle,
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 28),
-                        // Enter Button Plaque
-                        _EnterCastleButton(
-                          isOpening: _isOpening,
-                          onPressed: _enterCastle,
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ),
-            ],
-          );
-        },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
