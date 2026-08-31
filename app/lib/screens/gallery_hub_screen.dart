@@ -26,77 +26,93 @@ class GalleryHubScreen extends StatelessWidget {
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 980),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 36),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'THE INNER GALLERY',
-                        style: TextStyle(
-                          color: Color(0xFFD4AF37),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 3.5,
-                          shadows: [Shadow(color: Colors.black87, blurRadius: 6)],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Gallery Hall',
-                        style: TextStyle(
-                          color: Color(0xFFF5EEDA),
-                          fontSize: 38,
-                          fontWeight: FontWeight.w400,
-                          letterSpacing: 0.8,
-                          shadows: [
-                            Shadow(color: Colors.black87, blurRadius: 10, offset: Offset(0, 3)),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'A first glimpse into the rooms beyond the entrance.',
-                        style: TextStyle(
-                          color: Color(0xFFC2B7A0),
-                          fontSize: 16,
-                          shadows: [Shadow(color: Colors.black87, blurRadius: 4)],
-                        ),
-                      ),
-                      const SizedBox(height: 28),
-                      Expanded(
-                        child: GridView.builder(
-                          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 440,
-                            mainAxisExtent: 180,
-                            crossAxisSpacing: 20,
-                            mainAxisSpacing: 20,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final shortViewport = constraints.maxHeight < 700;
+                    final veryShortViewport = constraints.maxHeight < 560;
+
+                    final paddingV = veryShortViewport ? 16.0 : (shortViewport ? 24.0 : 36.0);
+                    final titleFontSize = veryShortViewport ? 28.0 : (shortViewport ? 32.0 : 38.0);
+                    final headerGap = veryShortViewport ? 4.0 : (shortViewport ? 6.0 : 8.0);
+                    final afterHeaderGap = veryShortViewport ? 16.0 : (shortViewport ? 20.0 : 28.0);
+                    final cardHeight = veryShortViewport ? 130.0 : (shortViewport ? 150.0 : 180.0);
+
+                    // A single SingleChildScrollView owns all vertical scrolling;
+                    // the grid below is shrink-wrapped so mouse-wheel/touchpad
+                    // scroll gestures are never trapped by a nested scrollable.
+                    return SingleChildScrollView(
+                      padding: EdgeInsets.symmetric(horizontal: 32, vertical: paddingV),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'THE INNER GALLERY',
+                            style: TextStyle(
+                              color: Color(0xFFD4AF37),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 3.5,
+                              shadows: [Shadow(color: Colors.black87, blurRadius: 6)],
+                            ),
                           ),
-                          itemCount: destinations.length,
-                          itemBuilder: (context, index) {
-                            final destination = destinations[index];
-                            final title = destination.$1;
-                            final icon = destination.$2;
-                            final description = destination.$3;
-                            return _GalleryFrame(
-                              title: title,
-                              icon: icon,
-                              description: description,
-                              onTap: title == 'Practice Rooms'
-                                  ? () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PracticeRoomScreen()))
-                                : title == 'Archive'
-                                  ? () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const ArchiveScreen()))
-                                : title == 'Research Laboratory'
-                                  ? () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const ResearchLaboratoryScreen()))
-                                : title == 'Completed Works'
-                                  ? () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const CompletedWorksScreen()))
-                                  : null,
-                            );
-                          },
-                        ),
+                          SizedBox(height: headerGap),
+                          Text(
+                            'Gallery Hall',
+                            style: TextStyle(
+                              color: const Color(0xFFF5EEDA),
+                              fontSize: titleFontSize,
+                              fontWeight: FontWeight.w400,
+                              letterSpacing: 0.8,
+                              shadows: const [
+                                Shadow(color: Colors.black87, blurRadius: 10, offset: Offset(0, 3)),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: headerGap),
+                          const Text(
+                            'A first glimpse into the rooms beyond the entrance.',
+                            style: TextStyle(
+                              color: Color(0xFFC2B7A0),
+                              fontSize: 16,
+                              shadows: [Shadow(color: Colors.black87, blurRadius: 4)],
+                            ),
+                          ),
+                          SizedBox(height: afterHeaderGap),
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: 440,
+                              mainAxisExtent: cardHeight,
+                              crossAxisSpacing: 20,
+                              mainAxisSpacing: 20,
+                            ),
+                            itemCount: destinations.length,
+                            itemBuilder: (context, index) {
+                              final destination = destinations[index];
+                              final title = destination.$1;
+                              final icon = destination.$2;
+                              final description = destination.$3;
+                              return _GalleryFrame(
+                                title: title,
+                                icon: icon,
+                                description: description,
+                                onTap: title == 'Practice Rooms'
+                                    ? () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PracticeRoomScreen()))
+                                  : title == 'Archive'
+                                    ? () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const ArchiveScreen()))
+                                  : title == 'Research Laboratory'
+                                    ? () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const ResearchLaboratoryScreen()))
+                                  : title == 'Completed Works'
+                                    ? () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const CompletedWorksScreen()))
+                                    : null,
+                              );
+                            },
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
             ),

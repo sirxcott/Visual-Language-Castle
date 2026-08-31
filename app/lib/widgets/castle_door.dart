@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 enum CastleDoorSide { left, right }
@@ -16,16 +18,20 @@ class CastleDoor extends StatelessWidget {
   final double width;
   final double height;
 
+  // Doors swing open ~80 degrees, hinged at their outer (jamb) edge.
+  static const double _maxOpenAngle = 80 * math.pi / 180;
+
   @override
   Widget build(BuildContext context) {
     final isLeft = side == CastleDoorSide.left;
+    // Pivot stays on the outer jamb edge; center edge swings inward, away
+    // from the viewer, so the castle appears to open and invite them in.
     final direction = isLeft ? -1.0 : 1.0;
     return Transform(
-      alignment: isLeft ? Alignment.centerRight : Alignment.centerLeft,
+      alignment: isLeft ? Alignment.centerLeft : Alignment.centerRight,
       transform: Matrix4.identity()
         ..setEntry(3, 2, 0.0014)
-        ..translateByDouble(direction * width * 0.72 * progress, 0, 0, 1)
-        ..rotateY(direction * progress),
+        ..rotateY(direction * _maxOpenAngle * progress),
       child: _DoorSlab(width: width, height: height, isLeft: isLeft),
     );
   }
