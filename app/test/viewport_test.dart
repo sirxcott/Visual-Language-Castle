@@ -37,11 +37,15 @@ void main() {
       final stageRect = tester.getRect(find.byKey(const ValueKey('entrance-door-stage')));
       final frameRect = tester.getRect(find.byKey(const ValueKey('entrance-portal-frame')));
 
-      expect(screenRect.contains(buttonRect.bottomCenter), isTrue, reason: 'Enter button must remain reachable at $size');
-      expect(stageRect.contains(frameRect.topLeft), isTrue, reason: 'Portal top-left must not be clipped at $size');
-      expect(stageRect.contains(frameRect.bottomRight), isTrue, reason: 'Portal bottom-right must not be clipped at $size');
-      expect(screenRect.contains(frameRect.topLeft), isTrue, reason: 'Portal must stay inside the viewport at $size');
-      expect(screenRect.contains(frameRect.bottomRight), isTrue, reason: 'Portal must stay inside the viewport at $size');
+      expect(buttonRect.bottom, lessThanOrEqualTo(screenRect.bottom), reason: 'Enter button must remain reachable at $size');
+      expect(frameRect.left, greaterThanOrEqualTo(stageRect.left), reason: 'Portal left edge must not be clipped at $size');
+      expect(frameRect.top, greaterThanOrEqualTo(stageRect.top), reason: 'Portal top edge must not be clipped at $size');
+      expect(frameRect.right, lessThanOrEqualTo(stageRect.right), reason: 'Portal right edge must not be clipped at $size');
+      expect(frameRect.bottom, lessThanOrEqualTo(stageRect.bottom), reason: 'Portal bottom edge must not be clipped at $size');
+      expect(frameRect.left, greaterThanOrEqualTo(screenRect.left));
+      expect(frameRect.top, greaterThanOrEqualTo(screenRect.top));
+      expect(frameRect.right, lessThanOrEqualTo(screenRect.right));
+      expect(frameRect.bottom, lessThanOrEqualTo(screenRect.bottom));
     });
   }
 
@@ -76,9 +80,12 @@ void main() {
       EdgeInsets.only(top: 24, bottom: 24), // Android status/navigation areas
     ]) {
       await tester.pumpWidget(
-        MediaQuery(
-          data: MediaQueryData(size: const Size(390, 844), padding: safePadding),
-          child: const MaterialApp(home: CastleEntranceScreen()),
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(padding: safePadding),
+            child: child!,
+          ),
+          home: const CastleEntranceScreen(),
         ),
       );
       await tester.pump();
@@ -98,9 +105,12 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      const MediaQuery(
-        data: MediaQueryData(size: Size(320, 568), textScaler: TextScaler.linear(1.5)),
-        child: MaterialApp(home: GalleryHubScreen()),
+      MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.5)),
+          child: child!,
+        ),
+        home: const GalleryHubScreen(),
       ),
     );
     await tester.pump();
