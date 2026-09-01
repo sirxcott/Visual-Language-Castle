@@ -35,7 +35,9 @@ class GalleryHubScreen extends StatelessWidget {
                     final titleFontSize = veryShortViewport ? 28.0 : (shortViewport ? 32.0 : 38.0);
                     final headerGap = veryShortViewport ? 4.0 : (shortViewport ? 6.0 : 8.0);
                     final afterHeaderGap = veryShortViewport ? 16.0 : (shortViewport ? 20.0 : 28.0);
-                    final cardHeight = veryShortViewport ? 130.0 : (shortViewport ? 150.0 : 180.0);
+                    final baseCardHeight = veryShortViewport ? 130.0 : (shortViewport ? 150.0 : 180.0);
+                    final textScale = MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5);
+                    final cardHeight = baseCardHeight * textScale;
 
                     // A single SingleChildScrollView owns all vertical scrolling;
                     // the grid below is shrink-wrapped so mouse-wheel/touchpad
@@ -211,6 +213,8 @@ class _GalleryFrameState extends State<_GalleryFrame> {
                     children: [
                       Text(
                         widget.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: _hovered ? const Color(0xFFFFFFFF) : const Color(0xFFF5EEDA),
                           fontSize: 17,

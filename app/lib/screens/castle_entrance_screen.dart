@@ -13,6 +13,8 @@ class CastleEntranceScreen extends StatefulWidget {
 }
 
 class _CastleEntranceScreenState extends State<CastleEntranceScreen> with SingleTickerProviderStateMixin {
+  static const double _horizontalPadding = 20.0;
+  static const double _portalSurround = 24.0;
   late final AnimationController _doorController;
   bool _isOpening = false;
 
@@ -75,7 +77,7 @@ class _CastleEntranceScreenState extends State<CastleEntranceScreen> with Single
                 final gapAfterTagline = veryShortViewport ? 8.0 : (shortViewport ? 14.0 : 24.0);
                 final gapAfterStage = veryShortViewport ? 8.0 : (shortViewport ? 14.0 : 24.0);
                 final paddingV = veryShortViewport ? 6.0 : (shortViewport ? 12.0 : 20.0);
-                final stageWidth = math.min(650.0, constraints.maxWidth * 0.9);
+                final stageWidth = math.min(650.0, constraints.maxWidth - (_horizontalPadding * 2));
 
                 final header = Column(
                   mainAxisSize: MainAxisSize.min,
@@ -134,7 +136,7 @@ class _CastleEntranceScreenState extends State<CastleEntranceScreen> with Single
                   final doorHeight = math.max(_minDoorHeight, math.min(220.0, availableHeight * 0.45));
                   final doorWidth = _doorWidthForHeight(doorHeight, mobile, constraints.maxWidth);
                   return SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(vertical: paddingV, horizontal: 20),
+                    padding: EdgeInsets.symmetric(vertical: paddingV, horizontal: _horizontalPadding),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -152,7 +154,7 @@ class _CastleEntranceScreenState extends State<CastleEntranceScreen> with Single
                 // Column children), then let the doors fill whatever vertical
                 // space is left via Expanded -- guaranteeing zero overflow.
                 return Padding(
-                  padding: EdgeInsets.symmetric(vertical: paddingV, horizontal: 20),
+                  padding: EdgeInsets.symmetric(vertical: paddingV, horizontal: _horizontalPadding),
                   child: Column(
                     children: [
                       header,
@@ -190,21 +192,26 @@ class _CastleEntranceScreenState extends State<CastleEntranceScreen> with Single
   static const double _minDoorHeight = 175.0;
 
   static double _doorWidthForHeight(double height, bool mobile, double screenWidth) {
-    final widthBudget = mobile ? math.min(170.0, (screenWidth - 40) / 2) : math.min(270.0, screenWidth * 0.22);
+    final widthBudget = mobile
+        ? math.min(170.0, math.max(0.0, (screenWidth - (_horizontalPadding * 2) - _portalSurround) / 2))
+        : math.min(270.0, screenWidth * 0.22);
     return math.min(height * _doorAspect(mobile), widthBudget);
   }
 
   static double _doorHeightForBudget(double heightBudget, bool mobile, double screenWidth) {
-    final widthBudget = mobile ? math.min(170.0, (screenWidth - 40) / 2) : math.min(270.0, screenWidth * 0.22);
+    final widthBudget = mobile
+        ? math.min(170.0, math.max(0.0, (screenWidth - (_horizontalPadding * 2) - _portalSurround) / 2))
+        : math.min(270.0, screenWidth * 0.22);
     final heightLimitFromWidth = widthBudget / _doorAspect(mobile);
-    final availableHeight = math.max(_minDoorHeight, heightBudget - 16);
+    final availableHeight = math.max(_minDoorHeight, heightBudget - _portalSurround);
     return math.min(math.min(570.0, availableHeight), heightLimitFromWidth);
   }
 
   Widget _buildDoorStage(double doorWidth, double doorHeight, double stageWidth) {
     return SizedBox(
+      key: const ValueKey('entrance-door-stage'),
       width: stageWidth,
-      height: doorHeight + 16,
+      height: doorHeight + _portalSurround,
       child: AnimatedBuilder(
         animation: _doorController,
         builder: (context, child) => Stack(
@@ -212,8 +219,9 @@ class _CastleEntranceScreenState extends State<CastleEntranceScreen> with Single
           children: [
             // Stone Surround Portal Frame
             Container(
-              width: doorWidth * 2 + 24,
-              height: doorHeight + 24,
+              key: const ValueKey('entrance-portal-frame'),
+              width: doorWidth * 2 + _portalSurround,
+              height: doorHeight + _portalSurround,
               decoration: BoxDecoration(
                 color: const Color(0xFF050505),
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
