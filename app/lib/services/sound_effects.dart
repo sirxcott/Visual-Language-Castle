@@ -13,6 +13,7 @@ class SoundEffects {
   bool enabled = true;
 
   final AudioPlayer _player = AudioPlayer()..setReleaseMode(ReleaseMode.stop);
+  AudioPlayer? _gatePlayer;
 
   /// Plays the sticky-note placement/settle tap. Safe to call frequently;
   /// failures (e.g. an unsupported platform) are swallowed since this is
@@ -27,5 +28,26 @@ class SoundEffects {
     }
   }
 
-  void dispose() => _player.dispose();
+  /// Plays the castle gate cue: mechanism and chains, then hinge creak, then
+  /// the settling thud. The asset's internal timing matches the entrance door
+  /// animation, so it only needs to be started at the same moment.
+  ///
+  /// Never throws and never blocks: if audio is disabled or unavailable the
+  /// entrance still opens and navigates normally.
+  Future<void> playCastleGate() async {
+    if (!enabled) return;
+    try {
+      final player = _gatePlayer ??= AudioPlayer()..setReleaseMode(ReleaseMode.stop);
+      await player.stop();
+      await player.play(AssetSource('audio/castle_gate.wav'), volume: 0.5);
+    } on Object {
+      // Ignore playback failures.
+    }
+  }
+
+  void dispose() {
+    _player.dispose();
+    _gatePlayer?.dispose();
+    _gatePlayer = null;
+  }
 }

@@ -187,8 +187,8 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
 
   void _changeTable(int amount) {
     setState(() {
-      _tableIndex = (_tableIndex + amount) % languageTables.length;
-      if (_tableIndex < 0) _tableIndex += languageTables.length;
+      _tableIndex = (_tableIndex + amount) % normalBrowsingTables.length;
+      if (_tableIndex < 0) _tableIndex += normalBrowsingTables.length;
     });
   }
 
@@ -388,7 +388,7 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final table = languageTables[_tableIndex];
+    final table = normalBrowsingTables[_tableIndex];
     return PopScope(
       canPop: _allowPop,
       onPopInvokedWithResult: (didPop, result) {
@@ -426,7 +426,13 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
                                   child: GestureDetector(
                                     behavior: HitTestBehavior.translucent,
                                     onTapUp: (details) => _removeConnectionAt(details.localPosition),
-                                    child: CustomPaint(key: const ValueKey('connections-painter'), painter: _ConnectionsPainter(cards: _workspaceCards, connections: _connections)),
+                                    child: Semantics(
+                                      label: _connections.map((connection) => 'Connection from ${connection.fromCardId} to ${connection.toCardId}').join(', '),
+                                      child: CustomPaint(
+                                        key: const ValueKey('connections-painter'),
+                                        painter: _ConnectionsPainter(cards: _workspaceCards, connections: _connections),
+                                      ),
+                                    ),
                                   ),
                                 ),
                                 if (_workspaceCards.isEmpty) const _EmptyWorkspaceHint(),
@@ -455,9 +461,9 @@ class _PracticeRoomScreenState extends State<PracticeRoomScreen> {
                       );
                     if (roomConstraints.maxWidth < 700) {
                       final browserHeight = (roomConstraints.maxHeight * 0.30).clamp(220.0, 300.0);
-                      return Column(children: [SizedBox(height: browserHeight, width: double.infinity, child: TableBrowser(table: table, tableIndex: _tableIndex, tableCount: languageTables.length, onPrevious: () => _changeTable(-1), onNext: () => _changeTable(1), onAddCard: _addCardToWall)), Expanded(child: wall)]);
+                      return Column(children: [SizedBox(height: browserHeight, width: double.infinity, child: TableBrowser(table: table, tableIndex: _tableIndex, tableCount: normalBrowsingTables.length, onPrevious: () => _changeTable(-1), onNext: () => _changeTable(1), onAddCard: _addCardToWall)), Expanded(child: wall)]);
                     }
-                    return Row(children: [TableBrowser(table: table, tableIndex: _tableIndex, tableCount: languageTables.length, onPrevious: () => _changeTable(-1), onNext: () => _changeTable(1), onAddCard: _addCardToWall), Expanded(child: wall)]);
+                    return Row(children: [TableBrowser(table: table, tableIndex: _tableIndex, tableCount: normalBrowsingTables.length, onPrevious: () => _changeTable(-1), onNext: () => _changeTable(1), onAddCard: _addCardToWall), Expanded(child: wall)]);
                   },
                 ),
               ),

@@ -14,6 +14,7 @@ class ResearchLaboratoryScreen extends StatefulWidget {
 class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
   String _selectedTable = 'All Tables';
   String _selectedCategory = 'All Categories';
   String _selectedLinkageSubtype = 'All Linkage Subtypes';
@@ -52,6 +53,7 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
       ..removeListener(_updateResults)
       ..dispose();
     _searchFocusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -253,8 +255,10 @@ class _ResearchLaboratoryScreenState extends State<ResearchLaboratoryScreen> {
           const CustomPaint(painter: _ResearchLabPainter()),
           SafeArea(
             child: Scrollbar(
+              controller: _scrollController,
               thumbVisibility: true,
               child: SingleChildScrollView(
+                controller: _scrollController,
                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
                 child: Center(
                   child: ConstrainedBox(

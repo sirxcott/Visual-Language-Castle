@@ -4,15 +4,41 @@ import 'dart:math';
 
 import '../models/language_card.dart';
 
-/// A believable colored-paper tint blended from the category color over a cream base.
-Color _paperBase(Color category) => Color.lerp(const Color(0xFFF6EFDD), category, 0.24)!;
-
-/// A darkened variant of the category color that reads clearly on light paper.
-Color _paperAccent(Color category) {
+/// Coloured-paper body for a sticky note.
+///
+/// The category hue is carried by the paper itself rather than by an accent
+/// strip: saturation is kept just below poster-paint level and lightness is
+/// spread across the categories so each one reads as its own stock of paper.
+/// The lightness is then nudged toward whichever ink it already suits until
+/// body text clears WCAG AA, so hue and separation survive the fix.
+({Color base, Color ink}) _paperStock(Color category) {
   final hsl = HSLColor.fromColor(category);
-  final lightness = hsl.lightness > 0.42 ? 0.34 : hsl.lightness;
-  return hsl.withLightness(lightness).toColor();
+  var paper = hsl
+      .withSaturation((hsl.saturation * 0.94).clamp(0.30, 0.80))
+      .withLightness((hsl.lightness * 0.72 + 0.20).clamp(0.24, 0.80));
+
+  final preferDarkInk = _contrast(paper.toColor(), _darkInk) >= _contrast(paper.toColor(), _lightInk);
+  final ink = preferDarkInk ? _darkInk : _lightInk;
+
+  for (var step = 0; step < 40 && _contrast(paper.toColor(), ink) < 5.3; step++) {
+    final lightness = (paper.lightness + (preferDarkInk ? 0.02 : -0.02)).clamp(0.0, 1.0);
+    if (lightness == paper.lightness) break;
+    paper = paper.withLightness(lightness);
+  }
+  return (base: paper.toColor(), ink: ink);
 }
+
+const Color _darkInk = Color(0xFF221A0C);
+const Color _lightInk = Color(0xFFFBF4E4);
+
+double _contrast(Color a, Color b) {
+  final first = a.computeLuminance();
+  final second = b.computeLuminance();
+  return (max(first, second) + 0.05) / (min(first, second) + 0.05);
+}
+
+/// Category label colour: tinted toward the paper hue but still high contrast.
+Color _paperAccent(Color base, Color ink) => Color.lerp(ink, base, 0.18)!;
 
 Color _paperEdge(Color base) => Color.lerp(base, Colors.black, 0.16)!;
 
@@ -108,8 +134,10 @@ class _WorkspaceCardTileState extends State<WorkspaceCardTile> {
     final card = widget.workspaceCard.card;
     final color = card.category.color;
     final isStart = widget.isConnectionStart;
-    final base = _paperBase(color);
-    final accent = _paperAccent(color);
+    final stock = _paperStock(color);
+    final base = stock.base;
+    final ink = stock.ink;
+    final accent = _paperAccent(base, ink);
     final radius = _paperRadius(widget.workspaceCard.instanceId);
     final rotation = widget.connectionMode ? 0.0 : _paperRotation(widget.workspaceCard.instanceId);
     final lifted = _dragging || _hovered;
@@ -134,6 +162,7 @@ class _WorkspaceCardTileState extends State<WorkspaceCardTile> {
               child: ConstrainedBox(
                 constraints: BoxConstraints(minWidth: 150, maxWidth: widget.mobile ? 170 : 240),
                 child: AnimatedContainer(
+                  key: ValueKey('workspace-card-${widget.workspaceCard.instanceId}'),
                   duration: const Duration(milliseconds: 150),
                   curve: Curves.easeOut,
                   decoration: BoxDecoration(
@@ -143,9 +172,9 @@ class _WorkspaceCardTileState extends State<WorkspaceCardTile> {
                       end: Alignment.bottomRight,
                       stops: const [0.0, 0.55, 1.0],
                       colors: [
-                        Color.lerp(base, Colors.white, 0.05)!,
+                        Color.lerp(base, Colors.white, 0.09)!,
                         base,
-                        Color.lerp(base, Colors.black, 0.05)!,
+                        Color.lerp(base, Colors.black, 0.06)!,
                       ],
                     ),
                     border: Border.all(
@@ -191,7 +220,7 @@ class _WorkspaceCardTileState extends State<WorkspaceCardTile> {
                           child: GestureDetector(
                             behavior: HitTestBehavior.opaque,
                             dragStartBehavior: DragStartBehavior.down,
-                            onTap: widget.onBringToFront,
+                            onTap: widget.connectionMode ? null : widget.onBringToFront,
                             onLongPress: widget.mobile ? widget.onCycleOverlap : null,
                             onPanStart: widget.connectionMode ? null : (_) => setState(() => _dragging = true),
                             onPanUpdate: widget.connectionMode
@@ -216,6 +245,7 @@ class _WorkspaceCardTileState extends State<WorkspaceCardTile> {
                                       decoration: BoxDecoration(
                                         color: color,
                                         shape: BoxShape.circle,
+                                        border: Border.all(color: ink.withValues(alpha: 0.45), width: 0.8),
                                         boxShadow: [
                                           BoxShadow(color: color.withValues(alpha: 0.7), blurRadius: 4),
                                         ],
@@ -224,8 +254,7 @@ class _WorkspaceCardTileState extends State<WorkspaceCardTile> {
                                     const SizedBox(width: 7),
                                     Flexible(
                                       child: GestureDetector(
-                                        onTap: widget.connectionMode ? widget.onSelectForConnection : null,
-                                        onDoubleTap: widget.onOpenNotes,
+                                        onDoubleTap: widget.connectionMode ? null : widget.onOpenNotes,
                                         child: Text(
                                           card.category.label.toUpperCase(),
                                           overflow: TextOverflow.ellipsis,
@@ -240,7 +269,7 @@ class _WorkspaceCardTileState extends State<WorkspaceCardTile> {
                                     ),
                                     const SizedBox(width: 4),
                                     if (widget.workspaceCard.notes.isNotEmpty) ...[
-                                      const Icon(Icons.sticky_note_2_outlined, size: 14, color: Color(0xFFAD7F1E)),
+                                      Icon(Icons.sticky_note_2_outlined, size: 14, color: ink.withValues(alpha: 0.75)),
                                       const SizedBox(width: 4),
                                     ],
                                     if (!widget.connectionMode)
@@ -249,10 +278,10 @@ class _WorkspaceCardTileState extends State<WorkspaceCardTile> {
                                         onPressed: widget.onRemove,
                                         padding: EdgeInsets.zero,
                                         constraints: const BoxConstraints.tightFor(width: 28, height: 28),
-                                        icon: const Text(
+                                        icon: Text(
                                           '×',
                                           style: TextStyle(
-                                            color: Color(0xFF8B6B1F),
+                                            color: ink.withValues(alpha: 0.72),
                                             fontSize: 18,
                                             fontWeight: FontWeight.w600,
                                             height: 1,
@@ -263,12 +292,11 @@ class _WorkspaceCardTileState extends State<WorkspaceCardTile> {
                                 ),
                                 const SizedBox(height: 8),
                                 GestureDetector(
-                                  onTap: widget.connectionMode ? widget.onSelectForConnection : null,
-                                  onDoubleTap: widget.onOpenNotes,
+                                  onDoubleTap: widget.connectionMode ? null : widget.onOpenNotes,
                                   child: Text(
                                     card.text,
-                                    style: const TextStyle(
-                                      color: Color(0xFF2E2414),
+                                    style: TextStyle(
+                                      color: ink,
                                       fontSize: 15,
                                       height: 1.25,
                                       letterSpacing: 0.2,
@@ -280,6 +308,13 @@ class _WorkspaceCardTileState extends State<WorkspaceCardTile> {
                             ),
                           ),
                         ),
+                        if (widget.connectionMode)
+                          Positioned.fill(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: widget.onSelectForConnection,
+                            ),
+                          ),
                       ],
                     ),
                   ),

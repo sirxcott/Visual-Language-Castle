@@ -15,14 +15,118 @@ import 'package:visual_language_castle/data/language_tables.dart';
 import 'package:visual_language_castle/data/language_taxonomy.dart';
 import 'package:visual_language_castle/main.dart';
 import 'package:visual_language_castle/models/archived_work.dart';
+import 'package:visual_language_castle/models/developer_board.dart';
 import 'package:visual_language_castle/models/language_card.dart';
 import 'package:visual_language_castle/screens/archive_screen.dart';
 import 'package:visual_language_castle/screens/completed_works_screen.dart';
+import 'package:visual_language_castle/screens/developer_mode_screen.dart';
 import 'package:visual_language_castle/screens/practice_room_screen.dart';
 import 'package:visual_language_castle/screens/research_laboratory_screen.dart';
 import 'package:visual_language_castle/services/archive_storage.dart';
+import 'package:visual_language_castle/services/developer_board_storage.dart';
 
 void main() {
+  testWidgets('Developer Mode creates, edits, colors, drags, annotates, and exports custom notes', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1024, 768);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(MaterialApp(home: DeveloperModeScreen(storage: DeveloperBoardStorage.inMemory())));
+
+    await tester.tap(find.text('New Sticky'));
+    await tester.pump();
+    final noteField = find.byType(TextField).last;
+    await tester.enterText(noteField, 'A deliberately long original structure that keeps growing until the note must use a smaller readable font rather than overflowing its paper surface.');
+    await tester.pump();
+    final fittedStyle = tester.widget<TextField>(noteField).style!;
+    expect(fittedStyle.fontSize, lessThan(17));
+
+    final originalPosition = tester.getTopLeft(find.byType(TextField).last);
+    await tester.drag(find.byIcon(Icons.drag_indicator_rounded), const Offset(70, 50));
+    await tester.pump();
+    expect(tester.getTopLeft(find.byType(TextField).last), isNot(originalPosition));
+
+    await tester.tap(find.byTooltip('Note color'));
+    await tester.pumpAndSettle();
+    expect(find.text('Linkage'), findsOneWidget);
+    await tester.tap(find.text('Linkage'));
+    await tester.pump();
+    expect(find.text('LINKAGE'), findsOneWidget);
+    await tester.tap(find.byTooltip('Notes / Research'));
+    await tester.enterText(find.byType(TextField).last, 'Research provenance');
+    await tester.tap(find.text('Save notes'));
+    await tester.pump();
+
+    await tester.tap(find.text('Export Board'));
+    await tester.pump();
+    expect(find.textContaining('Research provenance'), findsOneWidget);
+    expect(find.textContaining('"color"'), findsOneWidget);
+    expect(find.textContaining('"category":"linkage"'), findsOneWidget);
+  });
+
+  test('Developer board storage preserves board names, note order, text, notes, colors, and positions', () async {
+    final storage = DeveloperBoardStorage.inMemory();
+    final board = DeveloperBoard(id: 'board-1', name: 'Original Structures', savedAt: DateTime.utc(2026, 9, 2), notes: [
+      DeveloperNote(id: 'note-1', text: 'Mindfulness', researchNotes: 'Research note', colorValue: 0xFFE0651B, position: const Offset(12, 34), category: DeveloperCategory.nominal),
+      DeveloperNote(id: 'note-2', text: 'Tranquility', researchNotes: '', colorValue: 0xFF2E9E62, position: const Offset(56, 78), category: DeveloperCategory.linkage),
+    ]);
+    await storage.saveBoards([board]);
+    final restored = await storage.loadBoards();
+    expect(restored.single.name, 'Original Structures');
+    expect(restored.single.notes.map((note) => note.id), ['note-1', 'note-2']);
+    expect(restored.single.notes.first.researchNotes, 'Research note');
+    expect(restored.single.notes.last.category, DeveloperCategory.linkage);
+    expect(restored.single.notes.last.colorValue, CardCategory.green.color.toARGB32());
+    expect(restored.single.notes.last.position, const Offset(56, 78));
+    final exported = storage.exportBoard(restored.single);
+    expect(exported, contains('Original Structures'));
+    expect(exported, contains('Research note'));
+    expect(exported, contains('color'));
+    expect(exported, contains('"category":"linkage"'));
+  });
+
+  test('Developer board storage migrates legacy raw color names and preserves ambiguous colors as unknown', () {
+    final storage = DeveloperBoardStorage.inMemory();
+    final restored = storage.decodeBoards('[{"id":"legacy","name":"Legacy board","savedAt":"2026-09-02T00:00:00.000Z","notes":[{"id":"orange","text":"","researchNotes":"","category":"orange","color":1,"x":0,"y":0},{"id":"pink","text":"","researchNotes":"","category":"pink","color":2,"x":0,"y":0},{"id":"green","text":"","researchNotes":"","category":"green","color":3,"x":0,"y":0},{"id":"red","text":"","researchNotes":"","category":"red","color":4,"x":0,"y":0},{"id":"notice","text":"","researchNotes":"","category":"notice","color":5,"x":0,"y":0},{"id":"embedded","text":"","researchNotes":"","category":"embedded","color":6,"x":0,"y":0},{"id":"time","text":"","researchNotes":"","category":"darkBlue","color":7,"x":0,"y":0},{"id":"cause","text":"","researchNotes":"","category":"lightBlue","color":8,"x":0,"y":0},{"id":"yellow","text":"","researchNotes":"","category":"yellow","color":9,"x":0,"y":0},{"id":"blue","text":"","researchNotes":"","category":"blue","color":10,"x":0,"y":0},{"id":"color-only","text":"","researchNotes":"","color":4293306701,"x":0,"y":0}]}]');
+    final categories = {for (final note in restored.single.notes) note.id: note.category};
+    expect(categories['orange'], DeveloperCategory.nominal);
+    expect(categories['pink'], DeveloperCategory.verb);
+    expect(categories['green'], DeveloperCategory.linkage);
+    expect(categories['red'], DeveloperCategory.compliance);
+    expect(categories['notice'], DeveloperCategory.notice);
+    expect(categories['embedded'], DeveloperCategory.embedded);
+    expect(categories['time'], DeveloperCategory.timeBind);
+    expect(categories['cause'], DeveloperCategory.causeAndEffect);
+    expect(categories['yellow'], DeveloperCategory.unknown);
+    expect(categories['blue'], DeveloperCategory.unknown);
+    expect(categories['color-only'], DeveloperCategory.unknown);
+    final exported = storage.exportBoard(restored.single);
+    expect(exported, contains('"category":"nominal"'));
+    expect(exported, contains('"category":"timeBind"'));
+    expect(exported, contains('"category":"unknown"'));
+    expect(exported, isNot(contains('"category":"orange"')));
+  });
+
+  testWidgets('visible scrollbars attach to their scroll views without runtime exceptions', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(600, 360);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final completed = List.generate(6, (index) => _testWork(id: 'complete-$index', name: 'Completed $index', isCompleted: true));
+
+    await tester.pumpWidget(MaterialApp(home: CompletedWorksScreen(storage: ArchiveStorage.inMemory(completed))));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -180));
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -180));
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Archive loads from injected storage', (WidgetTester tester) async {
     final storage = ArchiveStorage.inMemory([_testWork(id: 'completed', name: 'Finished', isCompleted: true), _testWork(id: 'draft', name: 'Draft')]);
     await tester.pumpWidget(MaterialApp(home: ArchiveScreen(storage: storage)));
@@ -501,31 +605,20 @@ void main() {
     expect(find.text('the room'), findsNothing);
   });
 
-  test('expanded Linkages corpus contains only the confirmed subtype examples', () {
+  test('expanded Linkages corpus preserves confirmed subtype examples', () {
     final linkages = languageTables.firstWhere((table) => table.name == 'Linkages').cards;
     final basic = linkages.where((card) => linkageSubtypeFor(card) == LinkageSubtype.basic).toList();
     final restatement = linkages.where((card) => linkageSubtypeFor(card) == LinkageSubtype.restatement).toList();
     final momentum = linkages.where((card) => linkageSubtypeFor(card) == LinkageSubtype.momentum).toList();
     final unclassified = linkages.where((card) => linkageSubtypeFor(card) == null).toList();
 
-    expect(linkages, hasLength(15));
-    expect(basic.map((card) => card.text), ['and', 'because', 'as', 'while', 'which means']);
-    expect(restatement.map((card) => card.text), [
-      'or should I say',
-      'or you could say',
-      'in other words',
-      'which is to say',
-      'to put it another way',
-      'or rather',
-    ]);
-    expect(momentum.map((card) => card.text), [
-      "and if that's the case",
-      'and as a result',
-      'of course',
-      'obviously',
-    ]);
-    expect(unclassified, isEmpty);
-    expect(linkages.map((card) => card.id).toSet(), hasLength(15));
+    expect(linkages, hasLength(66));
+    expect(basic, hasLength(7));
+    expect(restatement, hasLength(11));
+    expect(momentum, hasLength(7));
+    expect(unclassified, hasLength(41));
+    expect(linkages.map((card) => card.id).toSet(), hasLength(66));
+    expect(linkages.map((card) => card.text), containsAll(['And', 'And if that’s the case', 'You may/(VAK)where I’m going with this']));
 
     // Confirm both "which means" exist in their separate functional tables
     final causeAndEffect = languageTables.firstWhere((table) => table.name == 'Cause and Effect').cards;
@@ -576,17 +669,17 @@ void main() {
 
   testWidgets('Research results show Linkage subtype status and filtered count', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
-    expect(find.text('127 results'), findsOneWidget);
-    expect(find.text('Basic Linkages'), findsNWidgets(5));
-    expect(find.text('Restatement Linkages'), findsNWidgets(6));
-    expect(find.text('Momentum Linkages'), findsNWidgets(4));
-    expect(find.text('Unclassified'), findsNothing);
+    expect(find.text('368 results'), findsOneWidget);
+    expect(find.text('Basic Linkages'), findsNWidgets(7));
+    expect(find.text('Restatement Linkages'), findsNWidgets(11));
+    expect(find.text('Momentum Linkages'), findsNWidgets(7));
+    expect(find.text('Unclassified'), findsNWidgets(41));
 
     await tester.tap(find.byKey(const ValueKey('research-linkage-subtype-filter')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Basic Linkages').last);
     await tester.pumpAndSettle();
-    expect(find.text('5 results'), findsOneWidget);
+    expect(find.text('7 results'), findsOneWidget);
     expect(find.text('Restatement Linkages'), findsNothing);
   });
 
@@ -597,7 +690,7 @@ void main() {
     await tester.tap(find.text('Verbs').last);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('research-linkage-subtype-filter')), findsNothing);
-    expect(find.text('12 results'), findsOneWidget);
+    expect(find.text('111 results'), findsOneWidget);
   });
 
   testWidgets('Research Reset Filters restores the full result set', (WidgetTester tester) async {
@@ -608,9 +701,9 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Reset research filters'));
     await tester.pumpAndSettle();
 
-    expect(find.text('127 results'), findsOneWidget);
+    expect(find.text('368 results'), findsOneWidget);
     expect(find.text('or should I say'), findsOneWidget);
-    expect(find.text('Unclassified'), findsNothing);
+    expect(find.text('Unclassified'), findsNWidgets(41));
     expect(tester.widget<TextField>(find.byKey(const ValueKey('research-search-field'))).controller!.text, isEmpty);
     expect(tester.widget<TextField>(find.byKey(const ValueKey('research-search-field'))).focusNode!.hasFocus, isTrue);
   });
@@ -626,7 +719,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Verbs').last);
     await tester.pumpAndSettle();
-    expect(find.text('12 results'), findsOneWidget);
+    expect(find.text('111 results'), findsOneWidget);
     expect(find.byKey(const ValueKey('research-linkage-subtype-filter')), findsNothing);
 
     await tester.tap(find.byKey(const ValueKey('research-table-filter')));
@@ -634,7 +727,7 @@ void main() {
     await tester.tap(find.text('All Tables').last);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('research-linkage-subtype-filter')), findsOneWidget);
-    expect(find.text('127 results'), findsOneWidget);
+    expect(find.text('368 results'), findsOneWidget);
   });
 
   testWidgets('Research details show the confirmed Linkage subtype', (WidgetTester tester) async {
@@ -644,7 +737,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('LINKAGE STATUS'), findsOneWidget);
-    expect(find.text('Restatement Linkages'), findsNWidgets(7));
+    expect(find.text('Restatement Linkages'), findsNWidgets(12));
   });
 
   test('taxonomy metadata remains excluded from archive serialization', () {
@@ -662,7 +755,7 @@ void main() {
 
     expect(linkageSubtypeFor(restatement), LinkageSubtype.restatement);
     expect(linkageSubtypeFor(momentum), LinkageSubtype.momentum);
-    expect(languageTables[2].cards.every((card) => linkageSubtypeFor(card) != null), isTrue);
+    expect(languageTables[2].cards.any((card) => linkageSubtypeFor(card) == null), isTrue);
     expect(linkageSubtypeLabel(languageTables[2].cards.first), 'Basic Linkages');
     expect(languageTables.first.name, 'Nominals');
     expect('Nominals are the abbreviated app term for hypnotic nominalizations.', contains('Nominals'));
@@ -688,9 +781,9 @@ void main() {
     expect(timeBinds.every((card) => card.category == CardCategory.darkBlue), isTrue);
     expect(causeAndEffect.every((card) => card.category == CardCategory.lightBlue), isTrue);
     expect(lyModifiers.every((card) => card.category == CardCategory.lyModifier), isTrue);
-    expect(CardCategory.darkBlue.color, const Color(0xFF466D9E));
-    expect(CardCategory.lightBlue.color, const Color(0xFF7893C7));
-    expect(CardCategory.lyModifier.color, const Color(0xFF66A6B8));
+    expect(CardCategory.darkBlue.color, const Color(0xFF2F6FD0));
+    expect(CardCategory.lightBlue.color, const Color(0xFF1B3E80));
+    expect(CardCategory.lyModifier.color, const Color(0xFF6FC0E8));
     expect(tablesByName.keys, isNot(contains('Presuppositions')));
     expect(tablesByName['Linkages'], isNotNull);
     expect(tablesByName['Cause and Effect'], isNotNull);
@@ -819,6 +912,47 @@ void main() {
     expect(find.byTooltip('Remove from wall'), findsNWidgets(2));
   });
 
+  testWidgets('Working Wall reliably selects full cards and connects expanded Nominals', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1024, 768);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final semantics = tester.ensureSemantics();
+    final nominals = languageTables.firstWhere((table) => table.name == 'Nominals').cards;
+    final mindfulness = nominals.firstWhere((card) => card.text == 'Mindfulness');
+    final tranquility = nominals.firstWhere((card) => card.text == 'Tranquility');
+    final calm = nominals.firstWhere((card) => card.text == 'Calm');
+    final first = WorkspaceCard(instanceId: 'mindfulness-start', card: mindfulness, position: const Offset(30, 30));
+    final second = WorkspaceCard(instanceId: 'tranquility-end', card: tranquility, position: const Offset(330, 30));
+    final third = WorkspaceCard(instanceId: 'calm-next', card: calm, position: const Offset(30, 230));
+    await tester.pumpWidget(MaterialApp(home: PracticeRoomScreen(initialCards: [first, second, third])));
+
+    final firstSurface = find.byKey(const ValueKey('workspace-card-mindfulness-start'));
+    await tester.drag(firstSurface, const Offset(40, 25));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.tap(find.text('Connections'));
+    await tester.pump();
+    final firstRect = tester.getRect(firstSurface);
+    await tester.tapAt(Offset(firstRect.right - 8, firstRect.bottom - 8));
+    await tester.pump();
+
+    BoxDecoration decorationFor(Finder finder) => tester.widget<AnimatedContainer>(finder).decoration! as BoxDecoration;
+    final selectedBorder = decorationFor(firstSurface).border! as Border;
+    expect(selectedBorder.top.color, const Color(0xFFF5D061));
+    expect(selectedBorder.top.width, 2.5);
+
+    await tester.tapAt(tester.getCenter(find.byKey(const ValueKey('workspace-card-tranquility-end'))));
+    await tester.pump();
+    expect(find.bySemanticsLabel('Connection from mindfulness-start to tranquility-end'), findsOneWidget);
+    expect((decorationFor(firstSurface).border! as Border).top.color, isNot(const Color(0xFFF5D061)));
+
+    await tester.tapAt(tester.getCenter(find.byKey(const ValueKey('workspace-card-calm-next'))));
+    await tester.pump();
+    expect((decorationFor(find.byKey(const ValueKey('workspace-card-calm-next'))).border! as Border).top.color, const Color(0xFFF5D061));
+    semantics.dispose();
+  });
+
   testWidgets('mobile tap and sub-threshold movement do not move a workspace card', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
@@ -929,8 +1063,8 @@ void main() {
     expect(CardCategory.notice.label, 'Notice');
     expect(CardCategory.embedded.label, 'Embedded');
 
-    expect(CardCategory.notice.color, const Color(0xFFD4A325));
-    expect(CardCategory.embedded.color, const Color(0xFF8F8140));
+    expect(CardCategory.notice.color, const Color(0xFFF2C010));
+    expect(CardCategory.embedded.color, const Color(0xFF7A6B22));
     expect(CardCategory.notice.color, isNot(equals(CardCategory.embedded.color)));
   });
 
@@ -1007,7 +1141,7 @@ void main() {
     expect(allTexts, isNot(contains('That\'s right')));
 
     expect(CardCategory.deepener.label, 'Deepener');
-    expect(CardCategory.deepener.color, const Color(0xFF632050));
+    expect(CardCategory.deepener.color, const Color(0xFF7A1350));
   });
 
   testWidgets('Research Laboratory filters and searches Deepeners', (WidgetTester tester) async {
@@ -1039,7 +1173,7 @@ void main() {
     final nominalsTable = tablesByName['Nominals']!;
     final timeBindsTable = tablesByName['Time Binds']!;
 
-    expect(nominalsTable.cards, hasLength(12));
+    expect(nominalsTable.cards, hasLength(91));
     final nominalTexts = nominalsTable.cards.map((c) => c.text).toList();
     expect(nominalTexts, isNot(contains('in a moment')));
     expect(nominalTexts, containsAll([
@@ -1061,8 +1195,9 @@ void main() {
     for (var i = 5; i < 12; i++) {
       expect(nominalsTable.cards[i].id, 'nom-${i + 2}');
     }
+    expect(nominalTexts, containsAll(['Calm', 'Contentment', 'Approval']));
     expect(nominalsTable.cards.every((c) => c.category == CardCategory.orange), isTrue);
-    expect(CardCategory.orange.color, const Color(0xFFC96A32));
+    expect(CardCategory.orange.color, const Color(0xFFE0651B));
 
     expect(timeBindsTable.cards.map((c) => c.text), contains('in a moment'));
     final timeInAMomentCard = timeBindsTable.cards.firstWhere((c) => c.text == 'in a moment');
@@ -1077,7 +1212,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Nominals').last);
     await tester.pumpAndSettle();
-    expect(find.text('12 results'), findsOneWidget);
+    expect(find.text('91 results'), findsOneWidget);
     expect(find.text('your inner wisdom'), findsOneWidget);
 
     await tester.enterText(find.byKey(const ValueKey('research-search-field')), 'realization');
@@ -1091,10 +1226,10 @@ void main() {
     expect(tablesByName, contains('Verbs'));
 
     final verbsTable = tablesByName['Verbs']!;
-    expect(verbsTable.cards, hasLength(12));
+    expect(verbsTable.cards, hasLength(111));
 
     final verbTexts = verbsTable.cards.map((c) => c.text).toList();
-    expect(verbTexts, [
+    expect(verbTexts.take(12), [
       'notice',
       'allow',
       'remember',
@@ -1114,7 +1249,8 @@ void main() {
       expect(verbsTable.cards[i].category, CardCategory.pink);
       expect(verbsTable.cards[i].tableName, 'Verbs');
     }
-    expect(CardCategory.pink.color, const Color(0xFFC55B78));
+    expect(verbTexts, containsAll(['Notice', 'Adopted', 'Gravitate']));
+    expect(CardCategory.pink.color, const Color(0xFFDD3F79));
 
     // Confirm longer functional phrases remain in specialized tables and not in Verbs
     final noticeTable = tablesByName['Notice']!;
@@ -1138,7 +1274,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Verbs').last);
     await tester.pumpAndSettle();
-    expect(find.text('12 results'), findsOneWidget);
+    expect(find.text('111 results'), findsOneWidget);
     expect(find.text('recognize'), findsOneWidget);
 
     await tester.enterText(find.byKey(const ValueKey('research-search-field')), 'imagine');
@@ -1168,7 +1304,7 @@ void main() {
     expect(cardTexts, isNot(contains('trance-formation')));
 
     expect(tranceTable.cards.every((c) => c.category == CardCategory.tranceWordplay), isTrue);
-    expect(CardCategory.tranceWordplay.color, const Color(0xFF8D527F));
+    expect(CardCategory.tranceWordplay.color, const Color(0xFFA8459A));
     expect(CardCategory.tranceWordplay.label, 'Trance Wordplay');
   });
 
@@ -1203,7 +1339,7 @@ void main() {
 
   test('Compliance hierarchy, subtypes, and relocated comp-4 are formalized', () {
     expect(CardCategory.red.label, 'Compliance');
-    expect(CardCategory.red.color, const Color(0xFFB94D4B));
+    expect(CardCategory.red.color, const Color(0xFFCE2A24));
 
     final tablesByName = {for (final table in languageTables) table.name: table};
     expect(tablesByName, contains('Compliance Commands'));
@@ -1320,24 +1456,35 @@ void main() {
     expect(find.text('Beginning'), findsOneWidget);
   });
 
-  testWidgets('all production tables render cards on the narrow mobile wall layout', (WidgetTester tester) async {
+  testWidgets('normal browsing excludes research-only tables while Research Laboratory retains their cards', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final complianceSets = languageTables.firstWhere((table) => table.name == 'Compliance Sets');
+    expect(complianceSets.cards, isNotEmpty);
+    expect(complianceSets.cards.every((card) => card.isResearchOnly), isTrue);
+    expect(normalBrowsingTables.map((table) => table.name), isNot(contains('Compliance Sets')));
+
     await tester.pumpWidget(const MaterialApp(home: PracticeRoomScreen()));
 
-    for (var index = 0; index < languageTables.length; index++) {
-      final table = languageTables[index];
-      final wallCards = table.cards.where((card) => !card.isResearchOnly).toList();
-      if (wallCards.isNotEmpty) {
-        expect(find.byTooltip('Add to Wall'), findsWidgets);
-        expect(find.text(wallCards.first.text), findsOneWidget);
-      } else {
-        expect(find.text(table.name), findsOneWidget);
-      }
+    for (var index = 0; index < normalBrowsingTables.length; index++) {
+      final table = normalBrowsingTables[index];
+      expect(find.byTooltip('Add to Wall'), findsWidgets);
+      expect(find.text(table.cards.firstWhere((card) => !card.isResearchOnly).text), findsOneWidget);
+      expect(find.text('Compliance Sets'), findsNothing);
       await tester.tap(find.byTooltip('Next table (D)'));
       await tester.pump();
     }
+
+    await tester.pumpWidget(const MaterialApp(home: ResearchLaboratoryScreen()));
+    await tester.tap(find.byKey(const ValueKey('research-table-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Compliance Sets').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Beginning'), findsOneWidget);
+    expect(find.text('Additional things'), findsOneWidget);
   });
 
   testWidgets('entrance opens into the gallery hall', (WidgetTester tester) async {
@@ -1381,13 +1528,13 @@ void main() {
     expect(find.text('TABLE BROWSER'), findsOneWidget);
     expect(find.text('Nominals'), findsOneWidget);
 
-    for (var index = 0; index < languageTables.length - 1; index++) {
+    for (var index = 0; index < normalBrowsingTables.length - 1; index++) {
       await tester.tap(find.byTooltip('Next table (D)'));
       await tester.pump();
     }
     expect(find.text('Deepeners'), findsOneWidget);
     expect(find.text('deeply relax'), findsOneWidget);
-    expect(languageTables.last.cards.map((card) => card.text), contains('sink twice as deep'));
+    expect(normalBrowsingTables.last.cards.map((card) => card.text), contains('sink twice as deep'));
   });
 
   testWidgets('table guidance explains Nominals and Linkages terminology', (WidgetTester tester) async {

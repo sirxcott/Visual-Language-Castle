@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../services/sound_effects.dart';
 import '../widgets/castle_door.dart';
 import 'gallery_hub_screen.dart';
 
@@ -15,13 +16,16 @@ class CastleEntranceScreen extends StatefulWidget {
 class _CastleEntranceScreenState extends State<CastleEntranceScreen> with SingleTickerProviderStateMixin {
   static const double _horizontalPadding = 20.0;
   static const double _portalSurround = 24.0;
+  static const Duration _openDuration = Duration(milliseconds: 2600);
+  static const Duration _revealDelay = Duration(milliseconds: 1950);
+  static const CastleDoorCurve _doorCurve = CastleDoorCurve();
   late final AnimationController _doorController;
   bool _isOpening = false;
 
   @override
   void initState() {
     super.initState();
-    _doorController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1250));
+    _doorController = AnimationController(vsync: this, duration: _openDuration);
   }
 
   @override
@@ -33,7 +37,11 @@ class _CastleEntranceScreenState extends State<CastleEntranceScreen> with Single
   Future<void> _enterCastle() async {
     if (_isOpening) return;
     setState(() => _isOpening = true);
-    await _doorController.forward();
+    _startGateSound();
+    _doorController.forward();
+    // Cross into the hall once the doors are far enough open to show the
+    // chamber, while the swing is still settling behind the fade.
+    await Future<void>.delayed(_revealDelay);
     if (!mounted) return;
     await Navigator.of(context).pushReplacement(
       PageRouteBuilder<void>(
@@ -42,9 +50,14 @@ class _CastleEntranceScreenState extends State<CastleEntranceScreen> with Single
           opacity: CurvedAnimation(parent: animation, curve: Curves.easeIn),
           child: child,
         ),
-        transitionDuration: const Duration(milliseconds: 650),
+        transitionDuration: const Duration(milliseconds: 900),
       ),
     );
+  }
+
+  /// Audio must never gate navigation, so it is fired and forgotten.
+  void _startGateSound() {
+    SoundEffects.instance.playCastleGate();
   }
 
   @override
@@ -214,9 +227,11 @@ class _CastleEntranceScreenState extends State<CastleEntranceScreen> with Single
       height: doorHeight + _portalSurround,
       child: AnimatedBuilder(
         animation: _doorController,
-        builder: (context, child) => Stack(
-          alignment: Alignment.center,
-          children: [
+        builder: (context, child) {
+          final swing = _doorCurve.transform(_doorController.value);
+          return Stack(
+            alignment: Alignment.center,
+            children: [
             // Stone Surround Portal Frame
             Container(
               key: const ValueKey('entrance-portal-frame'),
@@ -233,13 +248,18 @@ class _CastleEntranceScreenState extends State<CastleEntranceScreen> with Single
               ),
               child: Stack(
                 children: [
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: _ChamberBeyondPainter(reveal: swing.clamp(0.0, 1.0)),
+                    ),
+                  ),
                   // Soft Inner Glow (Chamber Beyond Doors)
                   Positioned.fill(
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: RadialGradient(
                           colors: [
-                            const Color(0xFFD4A325).withValues(alpha: 0.18 * _doorController.value),
+                            const Color(0xFFD4A325).withValues(alpha: 0.18 * swing.clamp(0.0, 1.0)),
                             Colors.transparent,
                           ],
                           radius: 0.8,
@@ -254,15 +274,91 @@ class _CastleEntranceScreenState extends State<CastleEntranceScreen> with Single
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CastleDoor(side: CastleDoorSide.left, progress: _doorController.value, width: doorWidth, height: doorHeight),
-                CastleDoor(side: CastleDoorSide.right, progress: _doorController.value, width: doorWidth, height: doorHeight),
+                CastleDoor(side: CastleDoorSide.left, progress: swing, width: doorWidth, height: doorHeight),
+                CastleDoor(side: CastleDoorSide.right, progress: swing, width: doorWidth, height: doorHeight),
               ],
             ),
           ],
-        ),
+          );
+        },
       ),
     );
   }
+}
+
+class _ChamberBeyondPainter extends CustomPainter {
+  const _ChamberBeyondPainter({required this.reveal});
+
+  /// 0 = doors shut, 1 = doors fully open.
+  final double reveal;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (reveal <= 0.001) return;
+    final rect = Offset.zero & size;
+    final vanishing = Offset(size.width / 2, size.height * 0.62);
+
+    // Receding corridor walls and floor.
+    final corridor = Paint()
+      ..color = const Color(0xFF1A140C).withValues(alpha: 0.9 * reveal);
+    canvas.drawPath(
+      Path()
+        ..moveTo(0, 0)
+        ..lineTo(size.width, 0)
+        ..lineTo(size.width * 0.72, vanishing.dy)
+        ..lineTo(size.width * 0.28, vanishing.dy)
+        ..close(),
+      corridor,
+    );
+
+    final floor = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.bottomCenter,
+        end: Alignment.topCenter,
+        colors: [
+          const Color(0xFF2A2015).withValues(alpha: 0.95 * reveal),
+          const Color(0xFF6B5227).withValues(alpha: 0.55 * reveal),
+        ],
+      ).createShader(rect);
+    canvas.drawPath(
+      Path()
+        ..moveTo(0, size.height)
+        ..lineTo(size.width, size.height)
+        ..lineTo(size.width * 0.72, vanishing.dy)
+        ..lineTo(size.width * 0.28, vanishing.dy)
+        ..close(),
+      floor,
+    );
+
+    // Flagstone courses converging on the vanishing point.
+    final course = Paint()
+      ..color = const Color(0xFF0A0705).withValues(alpha: 0.55 * reveal)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+    for (var step = 1; step <= 5; step++) {
+      final depth = math.pow(step / 6, 2.1).toDouble();
+      final y = size.height - (size.height - vanishing.dy) * (1 - depth);
+      final inset = size.width * 0.28 * (1 - depth);
+      canvas.drawLine(Offset(inset, y), Offset(size.width - inset, y), course);
+    }
+
+    // Warm torchlight spilling out of the chamber.
+    final glow = Paint()
+      ..shader = RadialGradient(
+        center: Alignment(0, (vanishing.dy / size.height) * 2 - 1),
+        radius: 0.85,
+        colors: [
+          const Color(0xFFF0C169).withValues(alpha: 0.42 * reveal),
+          const Color(0xFFD4A325).withValues(alpha: 0.16 * reveal),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.4, 1.0],
+      ).createShader(rect);
+    canvas.drawRect(rect, glow);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ChamberBeyondPainter oldDelegate) => oldDelegate.reveal != reveal;
 }
 
 class _DecorativeRule extends StatelessWidget {

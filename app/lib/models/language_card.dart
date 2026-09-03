@@ -43,31 +43,35 @@ extension CardCategoryDetails on CardCategory {
     }
   }
 
+  /// Canonical category hue. Saturation and lightness are spread widely so
+  /// categories stay separable at a glance; the sticky-note paper derives its
+  /// body tint from these values.
   Color get color {
     switch (this) {
       case CardCategory.orange:
-        return const Color(0xFFC96A32);
+        return const Color(0xFFE0651B);
       case CardCategory.pink:
-        return const Color(0xFFC55B78);
+        return const Color(0xFFDD3F79);
       case CardCategory.green:
-        return const Color(0xFF5D9A78);
+        return const Color(0xFF2E9E62);
       case CardCategory.red:
-        return const Color(0xFFB94D4B);
+        return const Color(0xFFCE2A24);
       case CardCategory.notice:
-        return const Color(0xFFD4A325);
+        return const Color(0xFFF2C010);
       case CardCategory.embedded:
-        return const Color(0xFF8F8140);
+        // Deliberately dull olive-yellow so Notice's bright yellow stays distinct.
+        return const Color(0xFF7A6B22);
       case CardCategory.darkBlue:
-        return const Color(0xFF466D9E);
+        return const Color(0xFF2F6FD0);
       case CardCategory.lightBlue:
-        return const Color(0xFF7893C7);
+        return const Color(0xFF1B3E80);
       case CardCategory.lyModifier:
-        return const Color(0xFF66A6B8);
+        return const Color(0xFF6FC0E8);
       case CardCategory.tranceWordplay:
-        return const Color(0xFF8D527F);
+        return const Color(0xFFA8459A);
       case CardCategory.deepener:
         // Deep maroon-purple: commands worded to send someone further into trance.
-        return const Color(0xFF632050);
+        return const Color(0xFF7A1350);
     }
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'archive_screen.dart';
 import 'completed_works_screen.dart';
+import 'developer_mode_screen.dart';
 import 'practice_room_screen.dart';
 import 'research_laboratory_screen.dart';
 
@@ -13,6 +14,7 @@ class GalleryHubScreen extends StatelessWidget {
     ('Archive', Icons.inventory_2_outlined, 'Review, manage, and restore saved wall arrangements.'),
     ('Research Laboratory', Icons.science_outlined, 'Search, filter, and analyze the language corpus across all tables.'),
     ('Completed Works', Icons.collections_bookmark_outlined, 'Examine finalized language compositions and past achievements.'),
+    ('Developer Mode', Icons.auto_fix_high_outlined, 'Create and develop original language structures.'),
   ];
 
   @override
@@ -107,6 +109,8 @@ class GalleryHubScreen extends StatelessWidget {
                                     ? () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const ResearchLaboratoryScreen()))
                                   : title == 'Completed Works'
                                     ? () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const CompletedWorksScreen()))
+                                  : title == 'Developer Mode'
+                                    ? () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const DeveloperModeScreen()))
                                     : null,
                               );
                             },

@@ -66,7 +66,15 @@ class _CardSurface extends StatelessWidget {
       constraints: BoxConstraints(minHeight: mobile ? 56 : 68),
       padding: EdgeInsets.symmetric(horizontal: mobile ? 10 : 14, vertical: mobile ? 8 : 12),
       decoration: BoxDecoration(
-        color: Color.alphaBlend(color.withValues(alpha: 0.18), const Color(0xFF191C1D)),
+        // The category hue tints the whole card body, not just the edge strip.
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.alphaBlend(color.withValues(alpha: 0.40), const Color(0xFF16191A)),
+            Color.alphaBlend(color.withValues(alpha: 0.26), const Color(0xFF16191A)),
+          ],
+        ),
         border: Border(
           left: BorderSide(color: color, width: 4),
           top: BorderSide(color: color.withValues(alpha: 0.38), width: 1),
@@ -91,6 +99,7 @@ class _CardSurface extends StatelessWidget {
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,
+              border: Border.all(color: const Color(0x66F0E6D2), width: 0.8),
               boxShadow: [
                 BoxShadow(color: color.withValues(alpha: 0.6), blurRadius: 4),
               ],

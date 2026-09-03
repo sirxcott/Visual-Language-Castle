@@ -16,6 +16,7 @@ class CompletedWorksScreen extends StatefulWidget {
 class _CompletedWorksScreenState extends State<CompletedWorksScreen> {
   List<ArchivedWork> _works = [];
   bool _isLoading = true;
+  final ScrollController _scrollController = ScrollController();
 
   ArchiveStorage get _storage => widget.storage ?? ArchiveStorage.instance;
 
@@ -23,6 +24,12 @@ class _CompletedWorksScreenState extends State<CompletedWorksScreen> {
   void initState() {
     super.initState();
     _loadWorks();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadWorks() async {
@@ -66,8 +73,10 @@ class _CompletedWorksScreenState extends State<CompletedWorksScreen> {
           const CustomPaint(painter: _CompletedWorksRoomPainter()),
           SafeArea(
             child: Scrollbar(
+              controller: _scrollController,
               thumbVisibility: true,
               child: SingleChildScrollView(
+                controller: _scrollController,
                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
                 child: Center(
                   child: ConstrainedBox(

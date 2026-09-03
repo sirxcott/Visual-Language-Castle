@@ -4,6 +4,34 @@ import 'package:flutter/material.dart';
 
 enum CastleDoorSide { left, right }
 
+/// Easing for a pair of very heavy doors on old hinges.
+///
+/// Four phases: the doors strain against their own weight and barely creep,
+/// they break free and accelerate, momentum carries them a little past the
+/// stop, and a damped oscillation settles them at full open.
+class CastleDoorCurve extends Curve {
+  const CastleDoorCurve();
+
+  static const double _resistanceEnd = 0.18;
+  static const double _swingEnd = 0.82;
+  static const double _creep = 0.035;
+  static const double _overshoot = 0.02;
+
+  @override
+  double transformInternal(double t) {
+    if (t < _resistanceEnd) {
+      final local = t / _resistanceEnd;
+      return _creep * local * local;
+    }
+    if (t < _swingEnd) {
+      final local = (t - _resistanceEnd) / (_swingEnd - _resistanceEnd);
+      return _creep + Curves.easeInOutCubic.transform(local) * (1 + _overshoot - _creep);
+    }
+    final local = (t - _swingEnd) / (1 - _swingEnd);
+    return 1 + _overshoot * math.exp(-4.5 * local) * math.cos(local * math.pi * 2.2);
+  }
+}
+
 class CastleDoor extends StatelessWidget {
   const CastleDoor({
     super.key,
@@ -13,13 +41,13 @@ class CastleDoor extends StatelessWidget {
     required this.height,
   });
 
+  /// Radians swept by a fully opened door.
+  static const double maxSwing = 1.18;
+
   final CastleDoorSide side;
   final double progress;
   final double width;
   final double height;
-
-  // Doors swing open ~80 degrees, hinged at their outer (jamb) edge.
-  static const double _maxOpenAngle = 80 * math.pi / 180;
 
   @override
   Widget build(BuildContext context) {
@@ -27,12 +55,38 @@ class CastleDoor extends StatelessWidget {
     // Pivot stays on the outer jamb edge; center edge swings inward, away
     // from the viewer, so the castle appears to open and invite them in.
     final direction = isLeft ? -1.0 : 1.0;
+    final angle = direction * progress * maxSwing;
     return Transform(
+      // Hinged on the outer edge: the free inner edge swings back into the chamber.
       alignment: isLeft ? Alignment.centerLeft : Alignment.centerRight,
       transform: Matrix4.identity()
-        ..setEntry(3, 2, 0.0014)
-        ..rotateY(direction * _maxOpenAngle * progress),
-      child: _DoorSlab(width: width, height: height, isLeft: isLeft),
+        ..setEntry(3, 2, 0.0016)
+        ..rotateY(angle),
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            _DoorSlab(width: width, height: height, isLeft: isLeft),
+            // The face turns away from the torchlight as the door swings out.
+            IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: isLeft ? Alignment.centerLeft : Alignment.centerRight,
+                    end: isLeft ? Alignment.centerRight : Alignment.centerLeft,
+                    colors: [
+                      Colors.black.withValues(alpha: (0.14 * math.sin(angle.abs())).clamp(0.0, 0.62)),
+                      Colors.black.withValues(alpha: (0.58 * math.sin(angle.abs())).clamp(0.0, 0.62)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
