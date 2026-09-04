@@ -51,6 +51,7 @@ class DeveloperBoardStorage {
         'id': board.id,
         'name': board.name,
         'savedAt': board.savedAt.toUtc().toIso8601String(),
+        'archived': board.archived,
         'notes': board.notes
             .map((note) => {
                   'id': note.id,
@@ -68,6 +69,7 @@ class DeveloperBoardStorage {
         id: json['id'] as String,
         name: json['name'] as String,
         savedAt: DateTime.parse(json['savedAt'] as String),
+        archived: json['archived'] as bool? ?? false,
         notes: (json['notes'] as List<dynamic>)
             .whereType<Map<String, dynamic>>()
             .map((note) => DeveloperNote(
