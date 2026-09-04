@@ -82,6 +82,15 @@ class _DeveloperModeScreenState extends State<DeveloperModeScreen> {
     if (selected != null) setState(() => note.category = selected);
   }
 
+  void _newBoard() {
+    setState(() {
+      _boardId = '';
+      _boardName = 'Untitled Development';
+      _savedAt = DateTime.now();
+      _notes.clear();
+    });
+  }
+
   Future<void> _saveBoard() async {
     final controller = TextEditingController(text: _boardName);
     final name = await showDialog<String>(
@@ -91,12 +100,85 @@ class _DeveloperModeScreenState extends State<DeveloperModeScreen> {
     controller.dispose();
     if (name == null || name.isEmpty) return;
     final now = DateTime.now();
-    final board = DeveloperBoard(id: _boardId.isEmpty ? now.microsecondsSinceEpoch.toString() : _boardId, name: name, savedAt: now, notes: _notes.map((note) => note.copy()).toList());
+    final existingBoard = _savedBoards.where((item) => item.id == _boardId).firstOrNull;
+    final board = DeveloperBoard(
+      id: _boardId.isEmpty ? now.microsecondsSinceEpoch.toString() : _boardId,
+      name: name,
+      savedAt: now,
+      notes: _notes.map((note) => note.copy()).toList(),
+      archived: existingBoard?.archived ?? false,
+    );
     final boards = List<DeveloperBoard>.of(_savedBoards);
     final existing = boards.indexWhere((item) => item.id == board.id);
     if (existing >= 0) { boards[existing] = board; } else { boards.insert(0, board); }
     await _storage.saveBoards(boards);
     if (mounted) setState(() { _boardId = board.id; _boardName = board.name; _savedAt = board.savedAt; _savedBoards = boards; });
+  }
+
+  Future<void> _duplicateBoard() async {
+    if (_boardId.isEmpty) {
+      await _saveBoard();
+      if (_boardId.isEmpty) return;
+    }
+    final now = DateTime.now();
+    final copy = DeveloperBoard(
+      id: now.microsecondsSinceEpoch.toString(),
+      name: '$_boardName Copy',
+      savedAt: now,
+      notes: _notes.map((note) => note.copy()).toList(),
+    );
+    final boards = [copy, ..._savedBoards];
+    await _storage.saveBoards(boards);
+    if (mounted) setState(() { _boardId = copy.id; _boardName = copy.name; _savedAt = copy.savedAt; _savedBoards = boards; });
+  }
+
+  Future<void> _archiveCurrentBoard() async {
+    if (_boardId.isEmpty) return;
+    final boards = List<DeveloperBoard>.of(_savedBoards);
+    final index = boards.indexWhere((item) => item.id == _boardId);
+    if (index < 0) return;
+    final board = boards[index].copy()..archived = true;
+    boards[index] = board;
+    await _storage.saveBoards(boards);
+    if (mounted) {
+      setState(() => _savedBoards = boards);
+      _newBoard();
+    }
+  }
+
+  Future<void> _deleteCurrentBoard() async {
+    if (_boardId.isEmpty) {
+      _newBoard();
+      return;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Developer Board?'),
+        content: Text('Delete “$_boardName”? This cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final boards = _savedBoards.where((item) => item.id != _boardId).toList();
+    await _storage.saveBoards(boards);
+    if (mounted) {
+      setState(() => _savedBoards = boards);
+      _newBoard();
+    }
+  }
+
+  Future<void> _restoreBoard(DeveloperBoard board) async {
+    final boards = List<DeveloperBoard>.of(_savedBoards);
+    final index = boards.indexWhere((item) => item.id == board.id);
+    if (index < 0) return;
+    final restored = boards[index].copy()..archived = false;
+    boards[index] = restored;
+    await _storage.saveBoards(boards);
+    if (mounted) setState(() => _savedBoards = boards);
   }
 
   Future<void> _openBoard() async {
@@ -105,13 +187,33 @@ class _DeveloperModeScreenState extends State<DeveloperModeScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Open Developer Board'),
         content: SizedBox(
-          width: 440,
+          width: 500,
           child: _savedBoards.isEmpty
               ? const Text('No Developer Mode boards have been saved yet.')
-              : ListView.separated(shrinkWrap: true, itemCount: _savedBoards.length, separatorBuilder: (_, _) => const Divider(), itemBuilder: (context, index) {
-                  final item = _savedBoards[index];
-                  return ListTile(title: Text(item.name), subtitle: Text('${item.notes.length} notes'), onTap: () => Navigator.pop(context, item));
-                }),
+              : ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: _savedBoards.length,
+                  separatorBuilder: (_, _) => const Divider(),
+                  itemBuilder: (context, index) {
+                    final item = _savedBoards[index];
+                    return ListTile(
+                      leading: Icon(item.archived ? Icons.inventory_2_outlined : Icons.dashboard_customize_outlined),
+                      title: Text(item.archived ? '${item.name}  [ARCHIVED]' : item.name),
+                      subtitle: Text('${item.notes.length} notes'),
+                      trailing: item.archived
+                          ? IconButton(
+                              tooltip: 'Restore board',
+                              icon: const Icon(Icons.unarchive_outlined),
+                              onPressed: () async {
+                                await _restoreBoard(item);
+                                if (context.mounted) Navigator.pop(context);
+                              },
+                            )
+                          : null,
+                      onTap: item.archived ? null : () => Navigator.pop(context, item),
+                    );
+                  },
+                ),
         ),
       ),
     );
@@ -131,7 +233,19 @@ class _DeveloperModeScreenState extends State<DeveloperModeScreen> {
         SafeArea(child: Padding(
           padding: const EdgeInsets.all(18),
           child: Column(children: [
-            _DeveloperToolbar(boardName: _boardName, onBack: () => Navigator.pop(context), onAdd: _addNote, onSave: _saveBoard, onOpen: _openBoard, onExport: _exportBoard),
+            _DeveloperToolbar(
+              boardName: _boardName,
+              hasSavedBoard: _boardId.isNotEmpty,
+              onBack: () => Navigator.pop(context),
+              onNew: _newBoard,
+              onAdd: _addNote,
+              onSave: _saveBoard,
+              onOpen: _openBoard,
+              onDuplicate: _duplicateBoard,
+              onArchive: _archiveCurrentBoard,
+              onDelete: _deleteCurrentBoard,
+              onExport: _exportBoard,
+            ),
             const SizedBox(height: 14),
             Expanded(child: LayoutBuilder(builder: (context, constraints) {
               _workSurface = constraints;
@@ -153,22 +267,50 @@ class _DeveloperModeScreenState extends State<DeveloperModeScreen> {
 }
 
 class _DeveloperToolbar extends StatelessWidget {
-  const _DeveloperToolbar({required this.boardName, required this.onBack, required this.onAdd, required this.onSave, required this.onOpen, required this.onExport});
+  const _DeveloperToolbar({
+    required this.boardName,
+    required this.hasSavedBoard,
+    required this.onBack,
+    required this.onNew,
+    required this.onAdd,
+    required this.onSave,
+    required this.onOpen,
+    required this.onDuplicate,
+    required this.onArchive,
+    required this.onDelete,
+    required this.onExport,
+  });
+
   final String boardName;
+  final bool hasSavedBoard;
   final VoidCallback onBack;
+  final VoidCallback onNew;
   final VoidCallback onAdd;
   final VoidCallback onSave;
   final VoidCallback onOpen;
+  final VoidCallback onDuplicate;
+  final VoidCallback onArchive;
+  final VoidCallback onDelete;
   final VoidCallback onExport;
+
   @override
-  Widget build(BuildContext context) => Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
-        IconButton(tooltip: 'Return to Gallery Hall', onPressed: onBack, icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFFD4AF37))),
-        Text('DEVELOPER MODE  |  $boardName', style: const TextStyle(color: Color(0xFFF5EEDA), fontSize: 17, fontWeight: FontWeight.w600, letterSpacing: 0.4)),
-        FilledButton.icon(onPressed: onAdd, icon: const Icon(Icons.add), label: const Text('New Sticky')),
-        OutlinedButton.icon(onPressed: onSave, icon: const Icon(Icons.save_outlined), label: const Text('Save Board')),
-        OutlinedButton.icon(onPressed: onOpen, icon: const Icon(Icons.folder_open_outlined), label: const Text('Open Board')),
-        OutlinedButton.icon(onPressed: onExport, icon: const Icon(Icons.ios_share_outlined), label: const Text('Export Board')),
-      ]);
+  Widget build(BuildContext context) => Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          IconButton(tooltip: 'Return to Gallery Hall', onPressed: onBack, icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFFD4AF37))),
+          Text('DEVELOPER MODE  |  $boardName', style: const TextStyle(color: Color(0xFFF5EEDA), fontSize: 17, fontWeight: FontWeight.w600, letterSpacing: 0.4)),
+          OutlinedButton.icon(onPressed: onNew, icon: const Icon(Icons.note_add_outlined), label: const Text('New Board')),
+          FilledButton.icon(onPressed: onAdd, icon: const Icon(Icons.add), label: const Text('New Sticky')),
+          OutlinedButton.icon(onPressed: onSave, icon: const Icon(Icons.save_outlined), label: const Text('Save Board')),
+          OutlinedButton.icon(onPressed: onOpen, icon: const Icon(Icons.folder_open_outlined), label: const Text('Open Board')),
+          OutlinedButton.icon(onPressed: onDuplicate, icon: const Icon(Icons.copy_all_outlined), label: const Text('Duplicate')),
+          OutlinedButton.icon(onPressed: hasSavedBoard ? onArchive : null, icon: const Icon(Icons.archive_outlined), label: const Text('Archive')),
+          IconButton(tooltip: 'Delete board', onPressed: onDelete, icon: const Icon(Icons.delete_outline, color: Color(0xFFE8A6A6))),
+          OutlinedButton.icon(onPressed: onExport, icon: const Icon(Icons.ios_share_outlined), label: const Text('Export Board')),
+        ],
+      );
 }
 
 class _DeveloperStickyNote extends StatefulWidget {
