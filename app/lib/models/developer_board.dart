@@ -104,17 +104,25 @@ class DeveloperNote {
 }
 
 class DeveloperBoard {
-  DeveloperBoard({required this.id, required this.name, required this.savedAt, required this.notes});
+  DeveloperBoard({
+    required this.id,
+    required this.name,
+    required this.savedAt,
+    required this.notes,
+    this.archived = false,
+  });
 
   final String id;
   String name;
   DateTime savedAt;
   final List<DeveloperNote> notes;
+  bool archived;
 
   DeveloperBoard copy() => DeveloperBoard(
         id: id,
         name: name,
         savedAt: savedAt,
         notes: notes.map((note) => note.copy()).toList(),
+        archived: archived,
       );
 }
