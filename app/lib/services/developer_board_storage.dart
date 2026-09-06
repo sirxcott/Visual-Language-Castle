@@ -62,6 +62,12 @@ class DeveloperBoardStorage {
                   'y': note.position.dy,
                 })
             .toList(),
+        'connections': board.connections
+            .map((connection) => {
+                  'fromNoteId': connection.fromNoteId,
+                  'toNoteId': connection.toNoteId,
+                })
+            .toList(),
       };
 
   DeveloperBoard _boardFromJson(Map<String, dynamic> json) => DeveloperBoard(
@@ -77,6 +83,13 @@ class DeveloperBoardStorage {
                   colorValue: note['color'] as int,
                   position: Offset((note['x'] as num).toDouble(), (note['y'] as num).toDouble()),
                   category: DeveloperCategoryDetails.fromStored(note['category']),
+                ))
+            .toList(),
+        connections: (json['connections'] as List<dynamic>? ?? const [])
+            .whereType<Map<String, dynamic>>()
+            .map((connection) => DeveloperConnection(
+                  fromNoteId: connection['fromNoteId'] as String,
+                  toNoteId: connection['toNoteId'] as String,
                 ))
             .toList(),
       );
