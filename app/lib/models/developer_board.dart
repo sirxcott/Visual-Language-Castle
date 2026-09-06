@@ -103,18 +103,33 @@ class DeveloperNote {
       );
 }
 
+class DeveloperConnection {
+  const DeveloperConnection({required this.fromNoteId, required this.toNoteId});
+
+  final String fromNoteId;
+  final String toNoteId;
+}
+
 class DeveloperBoard {
-  DeveloperBoard({required this.id, required this.name, required this.savedAt, required this.notes});
+  DeveloperBoard({
+    required this.id,
+    required this.name,
+    required this.savedAt,
+    required this.notes,
+    List<DeveloperConnection>? connections,
+  }) : connections = connections ?? [];
 
   final String id;
   String name;
   DateTime savedAt;
   final List<DeveloperNote> notes;
+  final List<DeveloperConnection> connections;
 
   DeveloperBoard copy() => DeveloperBoard(
         id: id,
         name: name,
         savedAt: savedAt,
         notes: notes.map((note) => note.copy()).toList(),
+        connections: List<DeveloperConnection>.of(connections),
       );
 }
