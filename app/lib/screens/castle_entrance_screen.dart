@@ -17,7 +17,7 @@ class _CastleEntranceScreenState extends State<CastleEntranceScreen> with Single
   static const double _horizontalPadding = 20.0;
   static const double _portalSurround = 24.0;
   static const Duration _openDuration = Duration(milliseconds: 2600);
-  static const Duration _revealDelay = Duration(milliseconds: 1950);
+  static const Duration _revealDelay = Duration(milliseconds: 3000);
   static const CastleDoorCurve _doorCurve = CastleDoorCurve();
   late final AnimationController _doorController;
   bool _isOpening = false;
