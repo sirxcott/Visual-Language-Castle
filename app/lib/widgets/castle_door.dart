@@ -120,7 +120,6 @@ class _DoorSlab extends StatelessWidget {
             Color(0xFF120704),
           ],
         ),
-        border: Border.all(color: brass.withValues(alpha: 0.8), width: 2),
         boxShadow: const [
           BoxShadow(color: Colors.black87, blurRadius: 24, spreadRadius: 2, offset: Offset(0, 6)),
         ],

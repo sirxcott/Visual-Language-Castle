@@ -240,7 +240,6 @@ class _CastleEntranceScreenState extends State<CastleEntranceScreen> with Single
               decoration: BoxDecoration(
                 color: const Color(0xFF050505),
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-                border: Border.all(color: const Color(0xFF6E5935), width: 3.5),
                 boxShadow: const [
                   BoxShadow(color: Colors.black, blurRadius: 40, spreadRadius: 8),
                   BoxShadow(color: Color(0x33D4AF37), blurRadius: 16, spreadRadius: -2),
