@@ -294,66 +294,225 @@ class _ChamberBeyondPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (reveal <= 0.001) return;
-    final rect = Offset.zero & size;
-    final vanishing = Offset(size.width / 2, size.height * 0.62);
 
-    // Receding corridor walls and floor.
-    final corridor = Paint()
-      ..color = const Color(0xFF1A140C).withValues(alpha: 0.9 * reveal);
-    canvas.drawPath(
-      Path()
-        ..moveTo(0, 0)
-        ..lineTo(size.width, 0)
-        ..lineTo(size.width * 0.72, vanishing.dy)
-        ..lineTo(size.width * 0.28, vanishing.dy)
-        ..close(),
-      corridor,
-    );
+    final w = size.width;
+    final h = size.height;
 
-    final floor = Paint()
+    // Centered distant vanishing point and tight back corridor arch (~30-50 ft depth)
+    final backLeft = w * 0.42;
+    final backRight = w * 0.58;
+    final backTop = h * 0.43;
+    final backBottom = h * 0.59;
+    final backArchHeight = h * 0.03;
+
+    // 1. Far Back Wall (End of Long Corridor)
+    final backWallPath = Path()
+      ..moveTo(backLeft, backBottom)
+      ..lineTo(backLeft, backTop + backArchHeight)
+      ..quadraticBezierTo(w * 0.5, backTop - backArchHeight * 0.5, backRight, backTop + backArchHeight)
+      ..lineTo(backRight, backBottom)
+      ..close();
+
+    final backWallPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          const Color(0xFF070605).withValues(alpha: reveal),
+          const Color(0xFF0F0D0B).withValues(alpha: reveal),
+        ],
+      ).createShader(Rect.fromLTRB(backLeft, backTop, backRight, backBottom));
+    canvas.drawPath(backWallPath, backWallPaint);
+
+    final backArchStroke = Paint()
+      ..color = const Color(0xFF050404).withValues(alpha: 0.8 * reveal)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    canvas.drawPath(backWallPath, backArchStroke);
+
+    // 2. Ceiling Converging into Distance
+    final ceilingPath = Path()
+      ..moveTo(0, 0)
+      ..lineTo(w, 0)
+      ..lineTo(backRight, backTop + backArchHeight)
+      ..quadraticBezierTo(w * 0.5, backTop - backArchHeight * 0.5, backLeft, backTop + backArchHeight)
+      ..close();
+
+    final ceilingPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          const Color(0xFF0C0B0A).withValues(alpha: 0.95 * reveal),
+          const Color(0xFF161412).withValues(alpha: 0.85 * reveal),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, w, backTop));
+    canvas.drawPath(ceilingPath, ceilingPaint);
+
+    // 3. Side Walls Converging Toward Distant Center
+    // Left Wall
+    final leftWallPath = Path()
+      ..moveTo(0, 0)
+      ..lineTo(backLeft, backTop + backArchHeight)
+      ..lineTo(backLeft, backBottom)
+      ..lineTo(0, h)
+      ..close();
+
+    final leftWallPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: [
+          const Color(0xFF1A1714).withValues(alpha: 0.95 * reveal),
+          const Color(0xFF100E0C).withValues(alpha: 0.95 * reveal),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, backLeft, h));
+    canvas.drawPath(leftWallPath, leftWallPaint);
+
+    // Right Wall
+    final rightWallPath = Path()
+      ..moveTo(w, 0)
+      ..lineTo(backRight, backTop + backArchHeight)
+      ..lineTo(backRight, backBottom)
+      ..lineTo(w, h)
+      ..close();
+
+    final rightWallPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.centerRight,
+        end: Alignment.centerLeft,
+        colors: [
+          const Color(0xFF1A1714).withValues(alpha: 0.95 * reveal),
+          const Color(0xFF100E0C).withValues(alpha: 0.95 * reveal),
+        ],
+      ).createShader(Rect.fromLTWH(backRight, 0, w - backRight, h));
+    canvas.drawPath(rightWallPath, rightWallPaint);
+
+    // Stone joints / course lines on side walls for perspective depth
+    final wallLinePaint = Paint()
+      ..color = const Color(0xFF0A0908).withValues(alpha: 0.6 * reveal)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    for (var i = 1; i <= 4; i++) {
+      final t = i / 5.0;
+      final yFront = h * t;
+      final yBack = backTop + (backBottom - backTop) * t;
+      canvas.drawLine(Offset(0, yFront), Offset(backLeft, yBack), wallLinePaint);
+      canvas.drawLine(Offset(w, yFront), Offset(backRight, yBack), wallLinePaint);
+    }
+
+    // 4. Floor with Steep Converging Perspective Lines & Flagstones
+    final floorPath = Path()
+      ..moveTo(0, h)
+      ..lineTo(w, h)
+      ..lineTo(backRight, backBottom)
+      ..lineTo(backLeft, backBottom)
+      ..close();
+
+    final floorPaint = Paint()
       ..shader = LinearGradient(
         begin: Alignment.bottomCenter,
         end: Alignment.topCenter,
         colors: [
-          const Color(0xFF2A2015).withValues(alpha: 0.95 * reveal),
-          const Color(0xFF6B5227).withValues(alpha: 0.55 * reveal),
+          const Color(0xFF221E19).withValues(alpha: 0.98 * reveal),
+          const Color(0xFF12100D).withValues(alpha: 0.95 * reveal),
         ],
-      ).createShader(rect);
-    canvas.drawPath(
-      Path()
-        ..moveTo(0, size.height)
-        ..lineTo(size.width, size.height)
-        ..lineTo(size.width * 0.72, vanishing.dy)
-        ..lineTo(size.width * 0.28, vanishing.dy)
-        ..close(),
-      floor,
-    );
+      ).createShader(Rect.fromLTWH(0, backBottom, w, h - backBottom));
+    canvas.drawPath(floorPath, floorPaint);
 
-    // Flagstone courses converging on the vanishing point.
-    final course = Paint()
-      ..color = const Color(0xFF0A0705).withValues(alpha: 0.55 * reveal)
+    // Converging floor guide lines leading steeply toward distant center
+    final floorLinePaint = Paint()
+      ..color = const Color(0xFF0D0B0A).withValues(alpha: 0.7 * reveal)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
-    for (var step = 1; step <= 5; step++) {
-      final depth = math.pow(step / 6, 2.1).toDouble();
-      final y = size.height - (size.height - vanishing.dy) * (1 - depth);
-      final inset = size.width * 0.28 * (1 - depth);
-      canvas.drawLine(Offset(inset, y), Offset(size.width - inset, y), course);
+
+    const numFloorLines = 8;
+    for (var i = 1; i < numFloorLines; i++) {
+      final fraction = i / numFloorLines;
+      final xFront = w * fraction;
+      final xBack = backLeft + (backRight - backLeft) * fraction;
+      canvas.drawLine(Offset(xFront, h), Offset(xBack, backBottom), floorLinePaint);
     }
 
-    // Warm torchlight spilling out of the chamber.
-    final glow = Paint()
+    // Horizontal flagstone course lines stepping into distance
+    for (var step = 1; step <= 7; step++) {
+      final depth = math.pow(step / 8, 2.0).toDouble();
+      final y = h - (h - backBottom) * (1 - depth);
+      final insetLeft = backLeft * (1 - depth);
+      final insetRight = w - (w - backRight) * (1 - depth);
+      canvas.drawLine(Offset(insetLeft, y), Offset(insetRight, y), floorLinePaint);
+    }
+
+    // 5. Two Wall Torches / Sconces (Left and Right)
+    final leftWallX = w * 0.18;
+    final leftWallY = h * 0.48;
+    _drawTorch(canvas, size, Offset(leftWallX, leftWallY), isLeft: true);
+
+    final rightWallX = w * 0.82;
+    final rightWallY = h * 0.48;
+    _drawTorch(canvas, size, Offset(rightWallX, rightWallY), isLeft: false);
+  }
+
+  void _drawTorch(Canvas canvas, Size size, Offset position, {required bool isLeft}) {
+    final x = position.dx;
+    final y = position.dy;
+
+    // Localized warm light glow around torch flame
+    final glowRadius = math.min(size.width, size.height) * 0.18;
+    final glowPaint = Paint()
       ..shader = RadialGradient(
-        center: Alignment(0, (vanishing.dy / size.height) * 2 - 1),
-        radius: 0.85,
         colors: [
-          const Color(0xFFF0C169).withValues(alpha: 0.42 * reveal),
-          const Color(0xFFD4A325).withValues(alpha: 0.16 * reveal),
+          const Color(0xFFFF9800).withValues(alpha: 0.35 * reveal),
+          const Color(0xFFFF5722).withValues(alpha: 0.12 * reveal),
           Colors.transparent,
         ],
-        stops: const [0.0, 0.4, 1.0],
-      ).createShader(rect);
-    canvas.drawRect(rect, glow);
+        stops: const [0.0, 0.45, 1.0],
+      ).createShader(Rect.fromCircle(center: position, radius: glowRadius));
+    canvas.drawCircle(position, glowRadius, glowPaint);
+
+    // Torch wall bracket / stem (short dark brown stem)
+    final bracketPaint = Paint()
+      ..color = const Color(0xFF2A1B0E).withValues(alpha: 0.95 * reveal)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round;
+
+    final wallAttachX = isLeft ? x - 12.0 : x + 12.0;
+    final bracketPath = Path()
+      ..moveTo(wallAttachX, y + 10.0)
+      ..lineTo(x, y + 6.0)
+      ..lineTo(x, y - 2.0);
+    canvas.drawPath(bracketPath, bracketPaint);
+
+    // Torch handle / cup
+    final cupPaint = Paint()
+      ..color = const Color(0xFF1C120A).withValues(alpha: 0.95 * reveal)
+      ..style = PaintingStyle.fill;
+    canvas.drawRect(Rect.fromCenter(center: Offset(x, y - 2.0), width: 5.0, height: 7.0), cupPaint);
+
+    // Warm glowing light / flame at end of torch stem
+    final flameOuterPaint = Paint()
+      ..color = const Color(0xFFFF8F00).withValues(alpha: 0.9 * reveal)
+      ..style = PaintingStyle.fill;
+    final flameInnerPaint = Paint()
+      ..color = const Color(0xFFFFF59D).withValues(alpha: 0.95 * reveal)
+      ..style = PaintingStyle.fill;
+
+    // Small flame teardrop shape
+    final flamePath = Path()
+      ..moveTo(x - 3.0, y - 3.0)
+      ..quadraticBezierTo(x - 4.0, y - 10.0, x, y - 15.0)
+      ..quadraticBezierTo(x + 4.0, y - 10.0, x + 3.0, y - 3.0)
+      ..close();
+    canvas.drawPath(flamePath, flameOuterPaint);
+
+    final innerFlamePath = Path()
+      ..moveTo(x - 1.5, y - 4.0)
+      ..quadraticBezierTo(x - 2.0, y - 8.0, x, y - 11.0)
+      ..quadraticBezierTo(x + 2.0, y - 8.0, x + 1.5, y - 4.0)
+      ..close();
+    canvas.drawPath(innerFlamePath, flameInnerPaint);
   }
 
   @override
